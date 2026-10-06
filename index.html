@@ -80,7 +80,7 @@
   </sc-if>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props="{&quot;option&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;glow2&quot;,&quot;options&quot;:[&quot;glow2&quot;,&quot;glow2t&quot;,&quot;aurora&quot;,&quot;particles&quot;,&quot;sweep&quot;,&quot;sweept&quot;,&quot;violet&quot;,&quot;teal&quot;,&quot;cloud&quot;,&quot;flat&quot;],&quot;tsType&quot;:&quot;string&quot;}}">
+<script type="text/x-dc" data-dc-script data-props="{&quot;option&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;cloud&quot;,&quot;options&quot;:[&quot;glow2&quot;,&quot;glow2t&quot;,&quot;aurora&quot;,&quot;particles&quot;,&quot;sweep&quot;,&quot;sweept&quot;,&quot;violet&quot;,&quot;teal&quot;,&quot;cloud&quot;,&quot;flat&quot;],&quot;tsType&quot;:&quot;string&quot;}}">
 const SCREENS=[['splash','Splash'],['start','Start'],['signin','Sign in'],['selectdome','Select dome'],['bluetooth','Bluetooth'],['pairing','Pairing'],['choose','Select vs suggest'],['intention','Intention'],['sessions','Session menu'],['feel','Helper · feel'],['type','Helper · type'],['mantra','Helper · mantra'],['startsession','Start session'],['player','Player'],['feedback','Feedback'],['booking','Booking']];
 const OPTIONS=[
  {id:'cloud',label:'Clouds everywhere',theme:'cloud',bg:'cloud',surface:'translucent',swatch:'linear-gradient(135deg,#7A4FB0,#F0907A)',note:'The current cloud artwork kept on every screen, tinted and slowed, with the new type, spacing and components on top.'},
@@ -93,7 +93,7 @@ const OPTIONS=[
  {id:'violet',label:'Vibrant lavender',theme:'violet',bg:'orbs2',surface:'translucent',swatch:'#6A45C8',note:'Saturated violet ground with magenta and cyan light turning behind frosted cards. The punchiest lavender.'},
  {id:'teal',label:'Website teal',theme:'teal',bg:'orbs',surface:'translucent',swatch:'linear-gradient(180deg,#0B1E3A,#1795B5)',note:'Navy to cyan, lifted straight from the website. Frosted cards.'}];
 class Component extends DCLogic {
-  state={mode:'step',orientation:'landscape',screen:'start',option:this.props.option||'cloud'};
+  state={mode:'step',orientation:'landscape',screen:'splash',option:this.props.option||'cloud'};
   seg(key,opts){return opts.map(([id,label])=>{const on=this.state[key]===id;return{id,label,pick:()=>this.setState({[key]:id}),bg:on?'#fff':'transparent',bd:on?'#fff':'#3A4160',fg:on?'#0B0E1A':'#D8DAE3'}})}
   componentDidMount(){this._ro=new ResizeObserver(()=>{const vw=window.innerWidth,vh=window.innerHeight;if(vw!==this.state.vw||vh!==this.state.vh)this.setState({vw,vh});});this._ro.observe(document.body);}
   componentWillUnmount(){this._ro&&this._ro.disconnect();}
