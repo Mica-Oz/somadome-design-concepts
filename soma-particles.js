@@ -6,17 +6,25 @@
   class SomaParticles extends HTMLElement{
     connectedCallback(){
       this.style.cssText+=';display:block;position:absolute;inset:0;pointer-events:none;overflow:hidden';
-      this._alive=true;
-      loadThree().then(THREE=>{if(!this._alive)return;this._init(THREE);}).catch(e=>console.warn('soma-particles',e));
+      this._io=new IntersectionObserver(([e])=>e.isIntersecting?this._start():this._stop(),{rootMargin:'200px'});
+      this._io.observe(this);
     }
-    disconnectedCallback(){this._alive=false;cancelAnimationFrame(this._raf);this._ro&&this._ro.disconnect();this._renderer&&this._renderer.dispose();}
+    disconnectedCallback(){this._io&&this._io.disconnect();this._stop();}
+    _start(){
+      if(this._alive)return;this._alive=true;
+      loadThree().then(THREE=>{if(this._alive&&!this._renderer)this._init(THREE);}).catch(e=>console.warn('soma-particles',e));
+    }
+    _stop(){
+      this._alive=false;cancelAnimationFrame(this._raf);this._ro&&this._ro.disconnect();
+      if(this._renderer){this._renderer.dispose();this._renderer.forceContextLoss();this._renderer.domElement.remove();this._renderer=null;}
+    }
     _init(THREE){
       const COUNT=Number(this.getAttribute('count')||9000);
       const dense=this.getAttribute('density')||'1';
       const scene=new THREE.Scene();
       const camera=new THREE.PerspectiveCamera(55,1,0.1,2000);camera.position.set(0,0,110);
       const renderer=new THREE.WebGLRenderer({antialias:false,alpha:true,powerPreference:'high-performance'});
-      renderer.setClearColor(0x000000,0);renderer.setPixelRatio(Math.min(devicePixelRatio,1.5));
+      renderer.setClearColor(0x000000,0);renderer.setPixelRatio(Math.min(devicePixelRatio,matchMedia('(pointer:coarse)').matches?1:1.5));
       this.appendChild(renderer.domElement);renderer.domElement.style.cssText='position:absolute;inset:0;width:100%;height:100%';
       this._renderer=renderer;
       const pos=new Float32Array(COUNT*3),col=new Float32Array(COUNT*3);

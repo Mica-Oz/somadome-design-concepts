@@ -58,7 +58,7 @@
     <div style="display:flex;gap:10px;padding:0 {{ padX }}px 40px;overflow-x:auto;-webkit-overflow-scrolling:touch">
       <sc-for list="{{ thumbs }}" as="t" hint-placeholder-count="16">
         <button onClick="{{ t.pick }}" style="flex:none;display:flex;flex-direction:column;gap:6px;padding:6px;background:transparent;border:1px solid {{ t.bd }};cursor:pointer;color:{{ t.fg }};font-family:'Poppins',sans-serif;font-size:11px;text-align:left">
-          <div style="position:relative;width:{{ thumbW }}px;height:{{ thumbH }}px;overflow:hidden;background:#0B0E1A"><div style="{{ thumbFit }}"><dc-import name="Tablet Screen" screen="{{ t.id }}" version="D" theme="{{ theme }}" bg="{{ bg }}" surface="{{ surface }}" cloud-landing="{{ cloudLanding }}" orientation="{{ orientation }}" scale="{{ 1 }}" hint-size="100%,100%"></dc-import></div></div>
+          <div style="position:relative;width:{{ thumbW }}px;height:{{ thumbH }}px;overflow:hidden;background:#0B0E1A"><div style="{{ thumbFit }}"><dc-import name="Tablet Screen" screen="{{ t.id }}" lite="{{ true }}" version="D" theme="{{ theme }}" bg="{{ bg }}" surface="{{ surface }}" cloud-landing="{{ cloudLanding }}" orientation="{{ orientation }}" scale="{{ 1 }}" hint-size="100%,100%"></dc-import></div></div>
           <span>{{ t.label }}</span>
         </button>
       </sc-for>
@@ -68,7 +68,7 @@
   <sc-if value="{{ isScroll }}" hint-placeholder-val="{{ false }}">
     <div style="display:flex;flex-direction:column;gap:40px;padding:24px {{ padX }}px 48px">
       <sc-for list="{{ rows }}" as="r" hint-placeholder-count="16">
-        <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;flex-direction:column;gap:12px;content-visibility:auto;contain-intrinsic-size:auto 900px">
           <div style="font-family:'Oswald',sans-serif;font-weight:300;font-size:28px;line-height:1.1;color:#fff">{{ r.label }}</div>
           <div style="display:grid;grid-template-columns:{{ gridCols }};justify-content:center;gap:{{ gridGap }}px;align-items:start">
             <div style="display:flex;flex-direction:column;gap:8px;min-width:0"><span style="font-size:11px;letter-spacing:.12em;color:#A9AEC2">current app</span><div data-cur-col="1" style="border:1px solid #252A3D;width:100%;aspect-ratio:{{ aspectCur }};position:relative;overflow:hidden"><div style="{{ fitStyleCur }}"><dc-import name="Tablet Screen" screen="{{ r.id }}" version="0" orientation="portrait" scale="{{ 1 }}" hint-size="100%,100%"></dc-import></div></div></div>

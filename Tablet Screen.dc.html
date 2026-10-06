@@ -33,13 +33,14 @@
     @keyframes smGlowAccent{0%,100%{box-shadow:0 0 18px var(--accentLo)}50%{box-shadow:0 0 52px var(--accentHi)}}
     @media (prefers-reduced-motion:reduce){[data-screen-label] *{animation:none !important}}
     body{margin:0;background:transparent}
+    [data-lite="1"] *{animation:none !important;backdrop-filter:none !important;-webkit-backdrop-filter:none !important}
     [data-screen-label] *{scrollbar-width:none}
     [data-screen-label] *::-webkit-scrollbar{width:0;height:0;display:none}
     a{color:inherit}a:hover{color:inherit}
   </style>
 </helmet>
 <div style="{{ wrapStyle }}">
-<div style="{{ frameStyle }}" data-screen-label="{{ screen }}">
+<div style="{{ frameStyle }}" data-screen-label="{{ screen }}" data-lite="{{ liteAttr }}">
   <sc-if value="{{ isCurrent }}" hint-placeholder-val="{{ false }}"><img src="{{ shotSrc }}" alt="Current app screenshot" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;z-index:2"></sc-if>
 
   <sc-if value="{{ showBloom }}" hint-placeholder-val="{{ true }}">
@@ -443,6 +444,7 @@ class Component extends DCLogic {
     let showBloom=v.bloom&&!v.bloom2&&(v.bloomAll||bloomScreens.includes(screen))&&!showPhoto;let showBloom2=!!v.bloom2&&!showPhoto&&!cur;let showAurora=false,showParticles=false,showCloud=false;
     if(bgp){showBloom=bgp==='orbs';showBloom2=bgp==='orbs2';showAurora=bgp==='aurora';showParticles=bgp==='particles';showCloud=bgp==='cloud';}
     if(cloudLanding){showCloud=true;showBloom=showBloom2=showAurora=showParticles=false;}
+    const lite=!!this.props.lite;if(lite&&showParticles){showParticles=false;showBloom=true;}
     const idx=ORDER.indexOf(screen);
     const goNext=()=>this.nav(ORDER[Math.min(idx+1,ORDER.length-1)]);
     const goPrev=()=>this.nav(screen==='sessions'?'intention':ORDER[Math.max(idx-1,0)]);
@@ -469,7 +471,7 @@ class Component extends DCLogic {
       toggleFan:()=>this.setState({fan:!S.fan}),fanTrack:S.fan?'var(--sess)':'transparent',fanGlow:S.fan?`0 0 24px ${rgba(chosen.color,.6)}`:'none',fanAnim:'none',skipGlow:S.skip?`0 0 24px ${rgba(chosen.color,.6)}`:'none',skipAnim:'none',fanKnob:S.fan?'28px':'4px',
       toggleSkip:()=>this.setState({skip:!S.skip}),skipTrack:S.skip?'var(--sess)':'transparent',skipKnob:S.skip?'28px':'4px',
       togglePlay:()=>this.setState({playing:!S.playing}),progress:'73%',elapsed:'0:13:55',remaining:'-0:05:08',
-      fbQuestions,chosenName:chosen.name,chosenTag:chosen.tag,chosenTop:chosen.top,chosenMore:chosen.more,chosenKicker:S.sess!==null?'your session':'we recommend',
+      fbQuestions,liteAttr:lite?'1':'0',chosenName:chosen.name,chosenTag:chosen.tag,chosenTop:chosen.top,chosenMore:chosen.more,chosenKicker:S.sess!==null?'your session':'we recommend',
       showWash:!cur&&sessScreen,washGlow:rgba(chosen.color,screen==='player'?.55:.4),washGlowAnim:screen==='player'?'smWashIn 1.6s cubic-bezier(.22,.61,.36,1) both,smWashSwell 9s cubic-bezier(.22,.61,.36,1) 1.6s infinite':'smWashIn 1.6s cubic-bezier(.22,.61,.36,1) both'},
       Object.fromEntries(['splash','start','signin','selectdome','bluetooth','pairing','choose','intention','sessions','feel','type','mantra','startsession','player','feedback','booking'].map(id=>['is_'+id,!cur&&is(id)])));
   }
