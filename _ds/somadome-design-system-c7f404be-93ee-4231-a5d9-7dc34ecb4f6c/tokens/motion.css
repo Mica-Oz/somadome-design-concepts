@@ -1,0 +1,9 @@
+:root{
+--ease-light:cubic-bezier(0.22,0.61,0.36,1);/* @kind other */
+--motion-instant:120ms;/* @kind other */--motion-quick:200ms;/* @kind other */--motion-default:320ms;/* @kind other */--motion-slow:600ms;/* @kind other */--motion-session:3s;/* @kind other */--motion-breathe:6s;/* @kind other */
+--rise-distance:12px;/* @kind other */
+}
+@keyframes soma-breathe{0%,100%{opacity:.6}50%{opacity:1}}
+@keyframes soma-rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@keyframes soma-pulse{0%,100%{opacity:.35}50%{opacity:1}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}

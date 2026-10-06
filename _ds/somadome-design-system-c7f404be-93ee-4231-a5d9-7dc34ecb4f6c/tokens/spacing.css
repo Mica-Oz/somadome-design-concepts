@@ -1,0 +1,10 @@
+:root{
+--space-1:4px;--space-2:8px;--space-3:12px;--space-4:16px;--space-6:24px;--space-8:32px;--space-12:48px;
+--radius-none:0;--radius-full:9999px;
+--border-hairline:1px;
+--focus-ring-width:2px;--focus-ring-offset:2px;
+--elevation:none;/* @kind shadow */
+--touch-min:44px;
+--family-dot-size:7px;
+--grid-columns-desktop:12;/* @kind other */--grid-columns-tablet:6;/* @kind other */--grid-columns-phone:4;/* @kind other */
+}

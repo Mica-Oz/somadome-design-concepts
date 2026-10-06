@@ -1,0 +1,22 @@
+:root{
+/* Core brand (print + physical) */
+--magenta-core:#E6007E;--cyan-core:#3EC6E0;--deep-purple:#2A1A5E;--near-black:#0B0E1A;--white:#FFFFFF;
+/* Screen tunings (on near-black) */
+--magenta-screen:#EE3D96;--cyan-screen:#5FD3E6;
+/* Canonical product tokens (brand kit §18) */
+--color-ground:#0B0E1A;--color-surface:#10142A;--color-surface-raised:#171C36;--color-hairline:#252A3D;--color-border-strong:#3A4160;
+--color-text-primary:#FFFFFF;--color-text-body:#D8DAE3;--color-text-muted:#A9AEC2;--color-text-faint:#5A6180;
+--color-accent:#EE3D96;--color-accent-pressed:#C8237A;--color-guest:#5FD3E6;--color-bloom:#2A1A5E;
+/* Session families — labels only, never fills or buttons */
+--color-family-calm:#C9A9F5;--color-family-sharp:#5FD3E6;--color-family-restored:#8E86E8;--color-family-direction:#EE3D96;
+/* Semantic aliases */
+--surface-page:var(--color-ground);--surface-card:var(--color-surface);--surface-raised:var(--color-surface-raised);
+--text-heading:var(--color-text-primary);--text-body:var(--color-text-body);--text-muted:var(--color-text-muted);--text-faint:var(--color-text-faint);
+--border-rule:var(--color-hairline);--border-control:var(--color-border-strong);
+--action-buyer:var(--color-accent);--action-buyer-pressed:var(--color-accent-pressed);--action-guest:var(--color-guest);
+--focus-ring-color:var(--color-guest);
+/* Light bloom — depth comes from light, not shadow */
+--bloom-purple:radial-gradient(closest-side,rgba(42,26,94,.95),rgba(42,26,94,0));/* @kind other */
+--bloom-magenta:radial-gradient(closest-side,rgba(238,61,150,.28),rgba(238,61,150,0));/* @kind other */
+--bloom-cyan:radial-gradient(closest-side,rgba(95,211,230,.22),rgba(95,211,230,0));/* @kind other */
+}

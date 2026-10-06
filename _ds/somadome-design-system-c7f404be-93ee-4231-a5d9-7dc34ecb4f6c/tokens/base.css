@@ -1,0 +1,4 @@
+html,body{background:var(--color-ground);color:var(--color-text-body);font-family:var(--font-body);font-size:var(--type-body-size);line-height:var(--type-body-lh);-webkit-font-smoothing:antialiased}
+a{color:var(--color-guest);text-decoration:underline;text-underline-offset:3px}
+a:hover{color:var(--color-text-primary)}
+:focus-visible{outline:var(--focus-ring-width) solid var(--focus-ring-color);outline-offset:var(--focus-ring-offset)}

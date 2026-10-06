@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/somadome-design-system-c7f404be-93ee-4231-a5d9-7dc34ecb4f6c/tokens/fonts.css">
+  <link rel="stylesheet" href="_ds/somadome-design-system-c7f404be-93ee-4231-a5d9-7dc34ecb4f6c/tokens/colors.css">
+  <link rel="stylesheet" href="_ds/somadome-design-system-c7f404be-93ee-4231-a5d9-7dc34ecb4f6c/tokens/typography.css">
+  <link rel="stylesheet" href="_ds/somadome-design-system-c7f404be-93ee-4231-a5d9-7dc34ecb4f6c/tokens/spacing.css">
+  <link rel="stylesheet" href="_ds/somadome-design-system-c7f404be-93ee-4231-a5d9-7dc34ecb4f6c/tokens/motion.css">
+  <link rel="stylesheet" href="_ds/somadome-design-system-c7f404be-93ee-4231-a5d9-7dc34ecb4f6c/tokens/base.css">
+  <link rel="stylesheet" href="_ds/somadome-design-system-c7f404be-93ee-4231-a5d9-7dc34ecb4f6c/styles.css">
+  <script src="_ds/somadome-design-system-c7f404be-93ee-4231-a5d9-7dc34ecb4f6c/_ds_bundle.js"></script>
+  <style>body{margin:0;background:#06080F}a{color:#5FD3E6}a:hover{color:#fff}</style>
+  <template id="__bundler_thumbnail"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><rect width="100" height="100" fill="#2A1A5E"/><circle cx="50" cy="50" r="18" fill="none" stroke="#5FD3E6" stroke-width="3"/><circle cx="50" cy="50" r="6" fill="#EE3D96"/></svg></template>
+</helmet>
+<div style="min-height:100vh;background:#06080F;color:#D8DAE3;font-family:'Poppins',sans-serif;font-size:13px;line-height:1.6;display:flex;flex-direction:column">
+
+  <div style="position:sticky;top:0;z-index:5;display:flex;flex-wrap:wrap;align-items:center;gap:16px 28px;padding:14px 24px;background:rgba(6,8,15,.88);backdrop-filter:blur(10px);border-bottom:1px solid #252A3D">
+    <img src="assets/logo-wordmark-white.png" alt="Somadome" style="height:18px">
+    <div style="font-family:'Oswald',sans-serif;font-weight:300;font-size:20px;color:#fff">Tablet app · current vs proposed</div>
+    <div style="flex:1"></div>
+    <div style="display:flex;align-items:center;gap:8px"><span style="font-size:11px;letter-spacing:.12em;color:#A9AEC2">view</span>
+      <sc-for list="{{ modeOpts }}" as="o" hint-placeholder-count="2"><button onClick="{{ o.pick }}" style="height:34px;padding:0 14px;background:{{ o.bg }};border:1px solid {{ o.bd }};color:{{ o.fg }};font-family:'Poppins',sans-serif;font-size:13px;cursor:pointer">{{ o.label }}</button></sc-for>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px"><span style="font-size:11px;letter-spacing:.12em;color:#A9AEC2">orientation</span>
+      <sc-for list="{{ orientOpts }}" as="o" hint-placeholder-count="2"><button onClick="{{ o.pick }}" style="height:34px;padding:0 14px;background:{{ o.bg }};border:1px solid {{ o.bd }};color:{{ o.fg }};font-family:'Poppins',sans-serif;font-size:13px;cursor:pointer">{{ o.label }}</button></sc-for>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-wrap:wrap;gap:8px;padding:16px 24px 0;align-items:center">
+    <span style="font-size:11px;letter-spacing:.12em;color:#A9AEC2;margin-right:8px">proposed option</span>
+    <sc-for list="{{ optionChips }}" as="o" hint-placeholder-count="9"><button onClick="{{ o.pick }}" style="height:36px;padding:0 14px;display:flex;align-items:center;gap:10px;background:{{ o.bg }};border:1px solid {{ o.bd }};color:{{ o.fg }};font-family:'Poppins',sans-serif;font-size:13px;cursor:pointer"><span style="width:14px;height:14px;border-radius:9999px;background:{{ o.swatch }};flex:none"></span>{{ o.label }}</button></sc-for>
+  </div>
+  <div style="padding:10px 24px 0;color:#A9AEC2;max-width:1100px;text-wrap:pretty">{{ optionNote }}</div>
+
+  <sc-if value="{{ isStep }}" hint-placeholder-val="{{ true }}">
+    <div style="display:flex;align-items:center;justify-content:center;gap:24px;padding:20px 24px 0">
+      <button onClick="{{ prev }}" style="width:48px;height:48px;display:flex;align-items:center;justify-content:center;background:transparent;border:1px solid #3A4160;color:#fff;font-size:22px;cursor:pointer;font-family:'Poppins',sans-serif">‹</button>
+      <div style="text-align:center;min-width:260px"><div style="font-size:11px;letter-spacing:.12em;color:#A9AEC2">screen {{ stepNum }} of {{ stepTotal }}</div><div style="font-family:'Oswald',sans-serif;font-weight:300;font-size:28px;line-height:1.1;color:#fff">{{ screenLabel }}</div></div>
+      <button onClick="{{ next }}" style="width:48px;height:48px;display:flex;align-items:center;justify-content:center;background:transparent;border:1px solid #3A4160;color:#fff;font-size:22px;cursor:pointer;font-family:'Poppins',sans-serif">›</button>
+    </div>
+    <div style="display:grid;grid-template-columns:{{ gridCols }};justify-content:center;gap:32px;padding:24px;align-items:start">
+      <div style="display:flex;flex-direction:column;gap:10px;min-width:0">
+        <div style="display:flex;align-items:baseline;gap:12px"><span style="font-size:11px;letter-spacing:.12em;color:#A9AEC2">current app</span><span style="color:#5A6180">screenshot · portrait only</span></div>
+        <div data-cur-col="1" style="border:1px solid #252A3D;width:100%;aspect-ratio:{{ aspectCur }};position:relative;overflow:hidden"><div style="{{ fitStyleCur }}"><dc-import name="Tablet Screen" screen="{{ screen }}" version="0" orientation="portrait" scale="{{ 1 }}" hint-size="100%,100%"></dc-import></div></div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;min-width:0">
+        <div style="display:flex;align-items:baseline;gap:12px"><span style="font-size:11px;letter-spacing:.12em;color:#5FD3E6">proposed</span><span style="color:#fff">{{ optionLabel }}</span><span style="color:#5A6180">clickable</span></div>
+        <div data-fit-col="1" style="border:1px solid #252A3D;width:100%;aspect-ratio:{{ aspect }};position:relative;overflow:hidden"><div style="{{ fitStyle }}"><dc-import name="Tablet Screen" screen="{{ screen }}" version="D" theme="{{ theme }}" bg="{{ bg }}" surface="{{ surface }}" cloud-landing="{{ cloudLanding }}" orientation="{{ orientation }}" scale="{{ 1 }}" on-navigate="{{ nav }}" hint-size="100%,100%"></dc-import></div></div>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;padding:0 24px 40px;overflow-x:auto">
+      <sc-for list="{{ thumbs }}" as="t" hint-placeholder-count="16">
+        <button onClick="{{ t.pick }}" style="flex:none;display:flex;flex-direction:column;gap:6px;padding:6px;background:transparent;border:1px solid {{ t.bd }};cursor:pointer;color:{{ t.fg }};font-family:'Poppins',sans-serif;font-size:11px;text-align:left">
+          <div style="position:relative;width:{{ thumbW }}px;height:{{ thumbH }}px;overflow:hidden;background:#0B0E1A"><div style="{{ thumbFit }}"><dc-import name="Tablet Screen" screen="{{ t.id }}" version="D" theme="{{ theme }}" bg="{{ bg }}" surface="{{ surface }}" cloud-landing="{{ cloudLanding }}" orientation="{{ orientation }}" scale="{{ 1 }}" hint-size="100%,100%"></dc-import></div></div>
+          <span>{{ t.label }}</span>
+        </button>
+      </sc-for>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isScroll }}" hint-placeholder-val="{{ false }}">
+    <div style="display:flex;flex-direction:column;gap:40px;padding:24px 24px 48px">
+      <sc-for list="{{ rows }}" as="r" hint-placeholder-count="16">
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <div style="font-family:'Oswald',sans-serif;font-weight:300;font-size:28px;line-height:1.1;color:#fff">{{ r.label }}</div>
+          <div style="display:grid;grid-template-columns:{{ gridCols }};justify-content:center;gap:32px;align-items:start">
+            <div style="display:flex;flex-direction:column;gap:8px;min-width:0"><span style="font-size:11px;letter-spacing:.12em;color:#A9AEC2">current app</span><div data-cur-col="1" style="border:1px solid #252A3D;width:100%;aspect-ratio:{{ aspectCur }};position:relative;overflow:hidden"><div style="{{ fitStyleCur }}"><dc-import name="Tablet Screen" screen="{{ r.id }}" version="0" orientation="portrait" scale="{{ 1 }}" hint-size="100%,100%"></dc-import></div></div></div>
+            <div style="display:flex;flex-direction:column;gap:8px;min-width:0"><span style="font-size:11px;letter-spacing:.12em;color:#5FD3E6">proposed · {{ optionLabel }}</span><div data-fit-col="1" style="border:1px solid #252A3D;width:100%;aspect-ratio:{{ aspect }};position:relative;overflow:hidden"><div style="{{ fitStyle }}"><dc-import name="Tablet Screen" screen="{{ r.id }}" version="D" theme="{{ theme }}" bg="{{ bg }}" surface="{{ surface }}" cloud-landing="{{ cloudLanding }}" orientation="{{ orientation }}" scale="{{ 1 }}" hint-size="100%,100%"></dc-import></div></div></div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;option&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;glow2&quot;,&quot;options&quot;:[&quot;glow2&quot;,&quot;glow2t&quot;,&quot;aurora&quot;,&quot;particles&quot;,&quot;sweep&quot;,&quot;sweept&quot;,&quot;violet&quot;,&quot;teal&quot;,&quot;cloud&quot;,&quot;flat&quot;],&quot;tsType&quot;:&quot;string&quot;}}">
+const SCREENS=[['splash','Splash'],['start','Start'],['signin','Sign in'],['selectdome','Select dome'],['bluetooth','Bluetooth'],['pairing','Pairing'],['choose','Select vs suggest'],['intention','Intention'],['sessions','Session menu'],['feel','Helper · feel'],['type','Helper · type'],['mantra','Helper · mantra'],['startsession','Start session'],['player','Player'],['feedback','Feedback'],['booking','Booking']];
+const OPTIONS=[
+ {id:'cloud',label:'Clouds everywhere',theme:'cloud',bg:'cloud',surface:'translucent',swatch:'linear-gradient(135deg,#7A4FB0,#F0907A)',note:'The current cloud artwork kept on every screen, tinted and slowed, with the new type, spacing and components on top.'},
+ {id:'glow2',label:'Glow v2',theme:'glow',bg:'orbs2',surface:'hairline',swatch:'linear-gradient(135deg,#2A1A5E,#EE3D96)',note:'Deep violet ground instead of near-black, with brighter turning purple, magenta and cyan light. Hairline cards. Clouds on splash and start.'},
+ {id:'glow2t',label:'Glow v2 · glass',theme:'glow',bg:'orbs2',surface:'translucent',swatch:'linear-gradient(135deg,#2A1A5E,#5FD3E6)',note:'Same dark ground, cards become frosted glass so the light shows through them.'},
+ {id:'aurora',label:'Aurora',theme:'glow',bg:'aurora',surface:'translucent',swatch:'linear-gradient(180deg,#5FD3E6,#2A1A5E,#EE3D96)',note:'Tall drifting ribbons of light instead of orbs. Frosted cards.'},
+ {id:'particles',label:'Particle curtain',theme:'glow',bg:'particles',surface:'translucent',swatch:'radial-gradient(circle,#5FD3E6 1px,transparent 1.5px) 0 0/5px 5px,#0B0E1A',note:'Your particle curtain, rendered live, no spin. A soft scrim and frosted cards keep the menus legible.'},
+ {id:'sweep',label:'Sweep · purple to cyan',theme:'sweep',bg:'orbs',surface:'hairline',swatch:'linear-gradient(170deg,#4A2A9E,#1AA8C4)',note:'The lighter direction. Pulled from the website banner: deep purple at the top easing into cyan at the bottom. Hairline cards, white type.'},
+ {id:'sweept',label:'Sweep · glass',theme:'sweep',bg:'orbs',surface:'translucent',swatch:'linear-gradient(170deg,#4A2A9E,#1AA8C4)',note:'Same sweep with frosted cards, closest to the website research section.'},
+ {id:'violet',label:'Vibrant lavender',theme:'violet',bg:'orbs2',surface:'translucent',swatch:'#6A45C8',note:'Saturated violet ground with magenta and cyan light turning behind frosted cards. The punchiest lavender.'},
+ {id:'teal',label:'Website teal',theme:'teal',bg:'orbs',surface:'translucent',swatch:'linear-gradient(180deg,#0B1E3A,#1795B5)',note:'Navy to cyan, lifted straight from the website. Frosted cards.'}];
+class Component extends DCLogic {
+  state={mode:'step',orientation:'landscape',screen:'start',option:this.props.option||'cloud'};
+  seg(key,opts){return opts.map(([id,label])=>{const on=this.state[key]===id;return{id,label,pick:()=>this.setState({[key]:id}),bg:on?'#fff':'transparent',bd:on?'#fff':'#3A4160',fg:on?'#0B0E1A':'#D8DAE3'}})}
+  componentDidMount(){this._ro=new ResizeObserver(()=>{const vw=window.innerWidth,vh=window.innerHeight;if(vw!==this.state.vw||vh!==this.state.vh)this.setState({vw,vh});});this._ro.observe(document.body);}
+  componentWillUnmount(){this._ro&&this._ro.disconnect();}
+  renderVals(){
+    const S=this.state,land=S.orientation==='landscape',W=land?1340:800,H=land?800:1340;
+    const opt=OPTIONS.find(o=>o.id===S.option)||OPTIONS[0];
+    const idx=SCREENS.findIndex(s=>s[0]===S.screen);
+    const go=i=>this.setState({screen:SCREENS[(i+SCREENS.length)%SCREENS.length][0]});
+    const fitStyle={position:'absolute',left:0,top:0,width:W,height:H,transformOrigin:'top left'};
+    const availW=(S.vw||1200)-48-32,availH=Math.max(360,(S.vh||800)-300);
+    const ratio=(H/W)*(800/1340);let propW=Math.min(availW/(1+ratio),availH*W/H);propW=Math.max(200,Math.floor(propW));const curW=Math.floor(propW*ratio);propW=Math.floor(propW*0.8);
+    const thumbW=land?168:100,thumbH=land?100:168;
+    return {modeOpts:this.seg('mode',[['step','Step through'],['scroll','Scroll']]),orientOpts:this.seg('orientation',[['landscape','Landscape'],['portrait','Portrait']]),
+      optionChips:OPTIONS.map(o=>{const on=o.id===S.option;return{label:o.label,swatch:o.swatch,pick:()=>this.setState({option:o.id}),bg:on?'#171C36':'transparent',bd:on?'#5FD3E6':'#3A4160',fg:'#fff'}}),
+      optionLabel:opt.label,optionNote:opt.note,theme:opt.theme,bg:opt.bg,surface:opt.surface,cloudLanding:opt.bg!=='cloud',
+      isStep:S.mode==='step',isScroll:S.mode==='scroll',orientation:S.orientation,screen:S.screen,screenLabel:SCREENS[idx][1],stepNum:idx+1,stepTotal:SCREENS.length,
+      prev:()=>go(idx-1),next:()=>go(idx+1),nav:id=>this.setState({screen:id}),
+      aspect:`${W} / ${H}`,fitStyle:Object.assign({},fitStyle,{transform:`scale(${propW/W})`}),aspectCur:'800 / 1340',fitStyleCur:{position:'absolute',left:0,top:0,width:800,height:1340,transformOrigin:'top left',transform:`scale(${curW/800})`},gridCols:`${curW}px ${propW}px`,
+      thumbW,thumbH,thumbFit:{position:'absolute',left:0,top:0,width:W,height:H,transformOrigin:'top left',transform:`scale(${thumbW/W})`,pointerEvents:'none'},
+      thumbs:SCREENS.map(([id,label])=>({id,label,pick:()=>this.setState({screen:id}),bd:id===S.screen?'#5FD3E6':'#252A3D',fg:id===S.screen?'#fff':'#A9AEC2'})),
+      rows:SCREENS.map(([id,label])=>({id,label}))};
+  }
+}
+</script>
+</body>
+</html>

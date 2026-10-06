@@ -1,0 +1,16 @@
+:root{
+--font-headline:"Oswald","Arial Narrow",sans-serif;
+--font-body:"Poppins",system-ui,sans-serif;
+--weight-light:300;--weight-regular:400;--weight-bold:700;
+/* Nine named steps (screen reference) */
+--type-display-size:82px;--type-display-lh:0.96;
+--type-h1-size:48px;--type-h1-lh:1.0;
+--type-h2-size:38px;--type-h2-lh:1.05;
+--type-h3-size:28px;--type-h3-lh:1.1;
+--type-quiet-size:28px;--type-quiet-lh:1.32;
+--type-lead-size:17px;--type-lead-lh:1.65;
+--type-body-size:15px;--type-body-lh:1.65;
+--type-caption-size:13px;--type-caption-lh:1.55;
+--type-eyebrow-size:11px;--type-eyebrow-lh:1.4;
+--tracking-eyebrow:0.16em;--tracking-eyebrow-wide:0.24em;--tracking-family:0.16em;
+}
