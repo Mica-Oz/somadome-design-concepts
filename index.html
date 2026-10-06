@@ -21,10 +21,10 @@
 </helmet>
 <div style="min-height:100vh;background:#06080F;color:#D8DAE3;font-family:'Poppins',sans-serif;font-size:13px;line-height:1.6;display:flex;flex-direction:column">
 
-  <div style="position:sticky;top:0;z-index:5;display:flex;flex-wrap:wrap;align-items:center;gap:16px 28px;padding:14px 24px;background:rgba(6,8,15,.88);backdrop-filter:blur(10px);border-bottom:1px solid #252A3D">
+  <div style="position:{{ headPos }};top:0;z-index:5;display:flex;flex-wrap:wrap;align-items:center;gap:{{ headGap }};padding:14px {{ padX }}px;background:rgba(6,8,15,.88);backdrop-filter:blur(10px);border-bottom:1px solid #252A3D">
     <img src="assets/logo-wordmark-white.png" alt="Somadome" style="height:18px">
-    <div style="font-family:'Oswald',sans-serif;font-weight:300;font-size:20px;color:#fff">Tablet app · current vs proposed</div>
-    <div style="flex:1"></div>
+    <div style="font-family:'Oswald',sans-serif;font-weight:300;font-size:{{ titleSize }}px;color:#fff">Tablet app · current vs proposed</div>
+    <div style="flex:1;display:{{ spacerDisp }}"></div>
     <div style="display:flex;align-items:center;gap:8px"><span style="font-size:11px;letter-spacing:.12em;color:#A9AEC2">view</span>
       <sc-for list="{{ modeOpts }}" as="o" hint-placeholder-count="2"><button onClick="{{ o.pick }}" style="height:34px;padding:0 14px;background:{{ o.bg }};border:1px solid {{ o.bd }};color:{{ o.fg }};font-family:'Poppins',sans-serif;font-size:13px;cursor:pointer">{{ o.label }}</button></sc-for>
     </div>
@@ -33,19 +33,19 @@
     </div>
   </div>
 
-  <div style="display:flex;flex-wrap:wrap;gap:8px;padding:16px 24px 0;align-items:center">
-    <span style="font-size:11px;letter-spacing:.12em;color:#A9AEC2;margin-right:8px">proposed option</span>
-    <sc-for list="{{ optionChips }}" as="o" hint-placeholder-count="9"><button onClick="{{ o.pick }}" style="height:36px;padding:0 14px;display:flex;align-items:center;gap:10px;background:{{ o.bg }};border:1px solid {{ o.bd }};color:{{ o.fg }};font-family:'Poppins',sans-serif;font-size:13px;cursor:pointer"><span style="width:14px;height:14px;border-radius:9999px;background:{{ o.swatch }};flex:none"></span>{{ o.label }}</button></sc-for>
+  <div style="display:flex;flex-wrap:{{ chipWrap }};overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;gap:8px;padding:16px {{ padX }}px 0;align-items:center">
+    <span style="font-size:11px;letter-spacing:.12em;color:#A9AEC2;margin-right:8px;flex:none;white-space:nowrap">proposed option</span>
+    <sc-for list="{{ optionChips }}" as="o" hint-placeholder-count="9"><button onClick="{{ o.pick }}" style="height:36px;padding:0 14px;display:flex;align-items:center;gap:10px;background:{{ o.bg }};border:1px solid {{ o.bd }};color:{{ o.fg }};font-family:'Poppins',sans-serif;font-size:13px;cursor:pointer;flex:none;white-space:nowrap"><span style="width:14px;height:14px;border-radius:9999px;background:{{ o.swatch }};flex:none"></span>{{ o.label }}</button></sc-for>
   </div>
-  <div style="padding:10px 24px 0;color:#A9AEC2;max-width:1100px;text-wrap:pretty">{{ optionNote }}</div>
+  <div style="padding:10px {{ padX }}px 0;color:#A9AEC2;max-width:1100px;text-wrap:pretty">{{ optionNote }}</div>
 
   <sc-if value="{{ isStep }}" hint-placeholder-val="{{ true }}">
-    <div style="display:flex;align-items:center;justify-content:center;gap:24px;padding:20px 24px 0">
-      <button onClick="{{ prev }}" style="width:48px;height:48px;display:flex;align-items:center;justify-content:center;background:transparent;border:1px solid #3A4160;color:#fff;font-size:22px;cursor:pointer;font-family:'Poppins',sans-serif">‹</button>
-      <div style="text-align:center;min-width:260px"><div style="font-size:11px;letter-spacing:.12em;color:#A9AEC2">screen {{ stepNum }} of {{ stepTotal }}</div><div style="font-family:'Oswald',sans-serif;font-weight:300;font-size:28px;line-height:1.1;color:#fff">{{ screenLabel }}</div></div>
-      <button onClick="{{ next }}" style="width:48px;height:48px;display:flex;align-items:center;justify-content:center;background:transparent;border:1px solid #3A4160;color:#fff;font-size:22px;cursor:pointer;font-family:'Poppins',sans-serif">›</button>
+    <div style="display:flex;align-items:center;justify-content:center;gap:{{ stepGap }}px;padding:20px {{ padX }}px 0">
+      <button onClick="{{ prev }}" style="width:48px;height:48px;display:flex;align-items:center;justify-content:center;background:transparent;border:1px solid #3A4160;color:#fff;font-size:22px;cursor:pointer;font-family:'Poppins',sans-serif;flex:none">‹</button>
+      <div style="text-align:center;min-width:{{ stepLabelW }};flex:{{ stepLabelFlex }}"><div style="font-size:11px;letter-spacing:.12em;color:#A9AEC2">screen {{ stepNum }} of {{ stepTotal }}</div><div style="font-family:'Oswald',sans-serif;font-weight:300;font-size:28px;line-height:1.1;color:#fff">{{ screenLabel }}</div></div>
+      <button onClick="{{ next }}" style="width:48px;height:48px;display:flex;align-items:center;justify-content:center;background:transparent;border:1px solid #3A4160;color:#fff;font-size:22px;cursor:pointer;font-family:'Poppins',sans-serif;flex:none">›</button>
     </div>
-    <div style="display:grid;grid-template-columns:{{ gridCols }};justify-content:center;gap:32px;padding:24px;align-items:start">
+    <div style="display:grid;grid-template-columns:{{ gridCols }};justify-content:center;gap:{{ gridGap }}px;padding:24px {{ padX }}px;align-items:start">
       <div style="display:flex;flex-direction:column;gap:10px;min-width:0">
         <div style="display:flex;align-items:baseline;gap:12px"><span style="font-size:11px;letter-spacing:.12em;color:#A9AEC2">current app</span><span style="color:#5A6180">screenshot · portrait only</span></div>
         <div data-cur-col="1" style="border:1px solid #252A3D;width:100%;aspect-ratio:{{ aspectCur }};position:relative;overflow:hidden"><div style="{{ fitStyleCur }}"><dc-import name="Tablet Screen" screen="{{ screen }}" version="0" orientation="portrait" scale="{{ 1 }}" hint-size="100%,100%"></dc-import></div></div>
@@ -55,7 +55,7 @@
         <div data-fit-col="1" style="border:1px solid #252A3D;width:100%;aspect-ratio:{{ aspect }};position:relative;overflow:hidden"><div style="{{ fitStyle }}"><dc-import name="Tablet Screen" screen="{{ screen }}" version="D" theme="{{ theme }}" bg="{{ bg }}" surface="{{ surface }}" cloud-landing="{{ cloudLanding }}" orientation="{{ orientation }}" scale="{{ 1 }}" on-navigate="{{ nav }}" hint-size="100%,100%"></dc-import></div></div>
       </div>
     </div>
-    <div style="display:flex;gap:10px;padding:0 24px 40px;overflow-x:auto">
+    <div style="display:flex;gap:10px;padding:0 {{ padX }}px 40px;overflow-x:auto;-webkit-overflow-scrolling:touch">
       <sc-for list="{{ thumbs }}" as="t" hint-placeholder-count="16">
         <button onClick="{{ t.pick }}" style="flex:none;display:flex;flex-direction:column;gap:6px;padding:6px;background:transparent;border:1px solid {{ t.bd }};cursor:pointer;color:{{ t.fg }};font-family:'Poppins',sans-serif;font-size:11px;text-align:left">
           <div style="position:relative;width:{{ thumbW }}px;height:{{ thumbH }}px;overflow:hidden;background:#0B0E1A"><div style="{{ thumbFit }}"><dc-import name="Tablet Screen" screen="{{ t.id }}" version="D" theme="{{ theme }}" bg="{{ bg }}" surface="{{ surface }}" cloud-landing="{{ cloudLanding }}" orientation="{{ orientation }}" scale="{{ 1 }}" hint-size="100%,100%"></dc-import></div></div>
@@ -66,11 +66,11 @@
   </sc-if>
 
   <sc-if value="{{ isScroll }}" hint-placeholder-val="{{ false }}">
-    <div style="display:flex;flex-direction:column;gap:40px;padding:24px 24px 48px">
+    <div style="display:flex;flex-direction:column;gap:40px;padding:24px {{ padX }}px 48px">
       <sc-for list="{{ rows }}" as="r" hint-placeholder-count="16">
         <div style="display:flex;flex-direction:column;gap:12px">
           <div style="font-family:'Oswald',sans-serif;font-weight:300;font-size:28px;line-height:1.1;color:#fff">{{ r.label }}</div>
-          <div style="display:grid;grid-template-columns:{{ gridCols }};justify-content:center;gap:32px;align-items:start">
+          <div style="display:grid;grid-template-columns:{{ gridCols }};justify-content:center;gap:{{ gridGap }}px;align-items:start">
             <div style="display:flex;flex-direction:column;gap:8px;min-width:0"><span style="font-size:11px;letter-spacing:.12em;color:#A9AEC2">current app</span><div data-cur-col="1" style="border:1px solid #252A3D;width:100%;aspect-ratio:{{ aspectCur }};position:relative;overflow:hidden"><div style="{{ fitStyleCur }}"><dc-import name="Tablet Screen" screen="{{ r.id }}" version="0" orientation="portrait" scale="{{ 1 }}" hint-size="100%,100%"></dc-import></div></div></div>
             <div style="display:flex;flex-direction:column;gap:8px;min-width:0"><span style="font-size:11px;letter-spacing:.12em;color:#5FD3E6">proposed · {{ optionLabel }}</span><div data-fit-col="1" style="border:1px solid #252A3D;width:100%;aspect-ratio:{{ aspect }};position:relative;overflow:hidden"><div style="{{ fitStyle }}"><dc-import name="Tablet Screen" screen="{{ r.id }}" version="D" theme="{{ theme }}" bg="{{ bg }}" surface="{{ surface }}" cloud-landing="{{ cloudLanding }}" orientation="{{ orientation }}" scale="{{ 1 }}" hint-size="100%,100%"></dc-import></div></div></div>
           </div>
@@ -93,7 +93,7 @@ const OPTIONS=[
  {id:'violet',label:'Vibrant lavender',theme:'violet',bg:'orbs2',surface:'translucent',swatch:'#6A45C8',note:'Saturated violet ground with magenta and cyan light turning behind frosted cards. The punchiest lavender.'},
  {id:'teal',label:'Website teal',theme:'teal',bg:'orbs',surface:'translucent',swatch:'linear-gradient(180deg,#0B1E3A,#1795B5)',note:'Navy to cyan, lifted straight from the website. Frosted cards.'}];
 class Component extends DCLogic {
-  state={mode:'step',orientation:'landscape',screen:'splash',option:this.props.option||'cloud'};
+  state={vw:window.innerWidth,vh:window.innerHeight,mode:'step',orientation:'landscape',screen:'splash',option:this.props.option||'cloud'};
   seg(key,opts){return opts.map(([id,label])=>{const on=this.state[key]===id;return{id,label,pick:()=>this.setState({[key]:id}),bg:on?'#fff':'transparent',bd:on?'#fff':'#3A4160',fg:on?'#0B0E1A':'#D8DAE3'}})}
   componentDidMount(){this._ro=new ResizeObserver(()=>{const vw=window.innerWidth,vh=window.innerHeight;if(vw!==this.state.vw||vh!==this.state.vh)this.setState({vw,vh});});this._ro.observe(document.body);}
   componentWillUnmount(){this._ro&&this._ro.disconnect();}
@@ -103,15 +103,18 @@ class Component extends DCLogic {
     const idx=SCREENS.findIndex(s=>s[0]===S.screen);
     const go=i=>this.setState({screen:SCREENS[(i+SCREENS.length)%SCREENS.length][0]});
     const fitStyle={position:'absolute',left:0,top:0,width:W,height:H,transformOrigin:'top left'};
+    const mob=(S.vw||1200)<720,padX=mob?16:24;
     const availW=(S.vw||1200)-48-32,availH=Math.max(360,(S.vh||800)-300);
-    const ratio=(H/W)*(800/1340);let propW=Math.min(availW/(1+ratio),availH*W/H);propW=Math.max(200,Math.floor(propW));const curW=Math.floor(propW*ratio);propW=Math.floor(propW*(land?0.8:1));
+    const ratio=(H/W)*(800/1340);let propW=Math.min(availW/(1+ratio),availH*W/H);propW=Math.max(200,Math.floor(propW));let curW=Math.floor(propW*ratio);propW=Math.floor(propW*(land?0.8:1));
+    // phones: stack current over proposed, each at full width
+    if(mob){propW=curW=Math.max(200,Math.floor((S.vw||375)-padX*2-2));}
     const thumbW=land?168:100,thumbH=land?100:168;
     return {modeOpts:this.seg('mode',[['step','Step through'],['scroll','Scroll']]),orientOpts:this.seg('orientation',[['landscape','Landscape'],['portrait','Portrait']]),
       optionChips:OPTIONS.map(o=>{const on=o.id===S.option;return{label:o.label,swatch:o.swatch,pick:()=>this.setState({option:o.id}),bg:on?'#171C36':'transparent',bd:on?'#5FD3E6':'#3A4160',fg:'#fff'}}),
       optionLabel:opt.label,optionNote:opt.note,theme:opt.theme,bg:opt.bg,surface:opt.surface,cloudLanding:opt.bg!=='cloud',
       isStep:S.mode==='step',isScroll:S.mode==='scroll',orientation:S.orientation,screen:S.screen,screenLabel:SCREENS[idx][1],stepNum:idx+1,stepTotal:SCREENS.length,
       prev:()=>go(idx-1),next:()=>go(idx+1),nav:id=>this.setState({screen:id}),
-      aspect:`${W} / ${H}`,fitStyle:Object.assign({},fitStyle,{transform:`scale(${propW/W})`}),aspectCur:'800 / 1340',fitStyleCur:{position:'absolute',left:0,top:0,width:800,height:1340,transformOrigin:'top left',transform:`scale(${curW/800})`},gridCols:`${curW}px ${propW}px`,
+      aspect:`${W} / ${H}`,fitStyle:Object.assign({},fitStyle,{transform:`scale(${propW/W})`}),aspectCur:'800 / 1340',fitStyleCur:{position:'absolute',left:0,top:0,width:800,height:1340,transformOrigin:'top left',transform:`scale(${curW/800})`},gridCols:mob?`${propW}px`:`${curW}px ${propW}px`,gridGap:mob?20:32,padX,headPos:mob?'relative':'sticky',headGap:mob?'12px 16px':'16px 28px',titleSize:mob?17:20,spacerDisp:mob?'none':'block',chipWrap:mob?'nowrap':'wrap',stepGap:mob?12:24,stepLabelW:mob?'0':'260px',stepLabelFlex:mob?'1':'none',
       thumbW,thumbH,thumbFit:{position:'absolute',left:0,top:0,width:W,height:H,transformOrigin:'top left',transform:`scale(${thumbW/W})`,pointerEvents:'none'},
       thumbs:SCREENS.map(([id,label])=>({id,label,pick:()=>this.setState({screen:id}),bd:id===S.screen?'#5FD3E6':'#252A3D',fg:id===S.screen?'#fff':'#A9AEC2'})),
       rows:SCREENS.map(([id,label])=>({id,label}))};
