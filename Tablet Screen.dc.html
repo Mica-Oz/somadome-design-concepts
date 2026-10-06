@@ -28,6 +28,8 @@
     @keyframes smGlow{0%,100%{box-shadow:0 0 0 1px var(--guest),0 0 20px var(--glowLo)}50%{box-shadow:0 0 0 1px var(--guest),0 0 56px var(--glowHi)}}
     @keyframes smDrift{0%{transform:translate(0,0) scale(1)}50%{transform:translate(20%,-16%) scale(1.3)}100%{transform:translate(-14%,12%) scale(.9)}}
     @keyframes smSpin{to{transform:rotate(360deg)}}
+    @keyframes smWashIn{from{opacity:0}to{opacity:var(--washOp)}}
+    @keyframes smWashSwell{0%,100%{transform:scale(1)}50%{transform:scale(1.18)}}
     @keyframes smGlowAccent{0%,100%{box-shadow:0 0 18px var(--accentLo)}50%{box-shadow:0 0 52px var(--accentHi)}}
     @media (prefers-reduced-motion:reduce){[data-screen-label] *{animation:none !important}}
     body{margin:0;background:transparent}
@@ -67,6 +69,11 @@
   <sc-if value="{{ showPhoto }}" hint-placeholder-val="{{ false }}">
     <div style="position:absolute;inset:0;background-image:url({{ photoUrl }});background-size:cover;background-position:center;pointer-events:none"></div>
     <div style="position:absolute;inset:0;background:linear-gradient(180deg,var(--photoFadeTop) 0%,var(--photoFade) 100%);pointer-events:none"></div>
+  </sc-if>
+
+  <sc-if value="{{ showWash }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;inset:0;background:var(--sess);mix-blend-mode:color;opacity:var(--washOp);animation:smWashIn 1.6s cubic-bezier(.22,.61,.36,1) both;pointer-events:none"></div>
+    <div style="position:absolute;left:-25%;top:-15%;width:150%;height:140%;background:radial-gradient(closest-side,{{ washGlow }},transparent);mix-blend-mode:screen;opacity:var(--washOp);animation:{{ washGlowAnim }};pointer-events:none"></div>
   </sc-if>
 
   <div style="position:relative;height:28px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;font-size:12px;color:var(--t3)">
@@ -216,10 +223,10 @@
     <sc-if value="{{ is_sessions }}" hint-placeholder-val="{{ false }}">
       <div style="flex:1;min-height:0;overflow:auto;padding:var(--glowPad);margin:0 calc(var(--glowPad) * -1);scrollbar-gutter:stable;-webkit-mask-image:var(--glowMask);mask-image:var(--glowMask);display:grid;grid-template-columns:repeat(var(--cols),minmax(0,1fr));gap:var(--gap);align-content:start">
         <sc-for list="{{ sessions }}" as="s" hint-placeholder-count="5">
-          <div onClick="{{ s.pick }}" style="display:flex;align-items:center;justify-content:space-between;gap:20px;padding:var(--itemPad);background:var(--cardBg);backdrop-filter:var(--cardBlur);-webkit-backdrop-filter:var(--cardBlur);border:var(--cardBorder);border-bottom:var(--rowBorder);border-radius:var(--r);outline:{{ s.ol }};outline-offset:-2px;box-shadow:{{ s.gl }};animation:{{ s.anim }};transition:box-shadow .2s cubic-bezier(.22,.61,.36,1),background .2s;cursor:pointer;box-sizing:border-box" style-hover="background:var(--hoverBg);box-shadow:var(--hoverGlow)">
+          <div onClick="{{ s.pick }}" style="display:flex;align-items:center;justify-content:space-between;gap:20px;padding:var(--itemPad);background:{{ s.rowBg }};backdrop-filter:var(--cardBlur);-webkit-backdrop-filter:var(--cardBlur);border:var(--cardBorder);border-bottom:var(--rowBorder);border-radius:var(--r);outline:{{ s.ol }};outline-offset:-2px;box-shadow:{{ s.gl }};animation:{{ s.anim }};transition:box-shadow .2s cubic-bezier(.22,.61,.36,1),background .2s;cursor:pointer;box-sizing:border-box" style-hover="background:var(--hoverBg);box-shadow:var(--hoverGlow)">
             <div style="display:flex;align-items:flex-start;gap:14px;min-width:0">
-              <span style="width:7px;height:7px;border-radius:9999px;background:{{ s.dot }};flex:none;margin-top:14px"></span>
-              <div><div style="font-family:var(--hfont);font-weight:var(--hw);font-size:28px;line-height:1.1;color:var(--t1)">{{ s.name }}</div><div style="color:var(--t3);font-size:15px;margin-top:4px">{{ s.desc }}</div></div>
+              <span style="width:7px;height:7px;border-radius:9999px;background:{{ s.color }};flex:none;margin-top:14px"></span>
+              <div><div style="font-family:var(--hfont);font-weight:var(--hw);font-size:28px;line-height:1.1;color:var(--t1)">{{ s.name }}</div><div style="color:var(--t2);font-size:15px;margin-top:4px">{{ s.top }}</div><div style="display:{{ s.moreDisp }};margin-top:10px"><div style="color:var(--t3);font-size:15px;text-wrap:pretty">{{ s.more }}</div><div style="font-size:11px;letter-spacing:.12em;color:{{ s.color }};margin-top:8px">{{ s.tag }}</div></div></div>
             </div>
             <span style="display:flex;flex:none;border-radius:var(--rSm);box-shadow:{{ s.gl }};animation:{{ s.anim }}">{{ s.box }}</span>
           </div>
@@ -281,9 +288,10 @@
     <sc-if value="{{ is_startsession }}" hint-placeholder-val="{{ false }}">
       <div style="flex:1;min-height:0;overflow:auto;padding:var(--glowPad);margin:0 calc(var(--glowPad) * -1);scrollbar-gutter:stable;-webkit-mask-image:var(--glowMask);mask-image:var(--glowMask);display:flex;flex-direction:column;gap:var(--gap);box-sizing:border-box;width:calc(100% + var(--glowPad) * 2);max-width:calc(880px + var(--glowPad) * 2);align-self:center">
         <div style="text-align:center">
-          <div style="font-size:11px;letter-spacing:.12em;color:var(--t3)">we recommend</div>
-          <div style="display:flex;align-items:center;justify-content:center;gap:16px;margin-top:4px"><span style="width:7px;height:7px;border-radius:9999px;background:var(--famDirection)"></span><div style="font-family:var(--hfont);font-weight:var(--hw);font-size:82px;line-height:1;color:var(--t1)">Fit</div></div>
-          <div style="color:var(--t3);font-size:17px;max-width:640px;margin:12px auto 0;text-wrap:pretty">A guided session using theta waves to support healthy habits and mind-body alignment for lasting change.</div>
+          <div style="font-size:11px;letter-spacing:.12em;color:var(--t3)">{{ chosenKicker }}</div>
+          <div style="display:flex;align-items:center;justify-content:center;gap:16px;margin-top:4px"><span style="width:7px;height:7px;border-radius:9999px;background:var(--sess)"></span><div style="font-family:var(--hfont);font-weight:var(--hw);font-size:82px;line-height:1;color:var(--t1)">{{ chosenName }}</div></div>
+          <div style="font-size:11px;letter-spacing:.12em;color:var(--sess);margin-top:10px">{{ chosenTag }}</div>
+          <div style="color:var(--t2);font-size:17px;max-width:640px;margin:12px auto 0;text-wrap:pretty">{{ chosenTop }} {{ chosenMore }}</div>
         </div>
         <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 0;border-top:1px solid var(--hair)">
           <div><div style="font-family:var(--hfont);font-weight:var(--hw);font-size:22px;color:var(--t1)">Use fan</div><div style="color:var(--t3);font-size:13px">Gentle airflow during the session.</div></div>
@@ -313,8 +321,8 @@
         </div>
       </div>
       <div style="flex:1"></div>
-      <div style="display:flex;align-items:center;gap:16px"><span style="width:7px;height:7px;border-radius:9999px;background:var(--famDirection)"></span><div style="font-family:var(--hfont);font-weight:var(--hw);font-size:48px;line-height:1;color:var(--t1)">Fit</div></div>
-      <div style="margin-top:24px;position:relative;height:2px;background:var(--ctrl)"><div style="position:absolute;left:0;top:0;height:2px;width:{{ progress }};background:var(--t1)"></div><div style="position:absolute;left:{{ progress }};top:-7px;width:16px;height:16px;background:var(--t1);transform:translateX(-50%)"></div></div>
+      <div style="display:flex;align-items:center;gap:16px"><span style="width:7px;height:7px;border-radius:9999px;background:var(--sess)"></span><div style="font-family:var(--hfont);font-weight:var(--hw);font-size:48px;line-height:1;color:var(--t1)">{{ chosenName }}</div><div style="font-size:11px;letter-spacing:.12em;color:var(--sess)">{{ chosenTag }}</div></div>
+      <div style="margin-top:24px;position:relative;height:2px;background:var(--ctrl)"><div style="position:absolute;left:0;top:0;height:2px;width:{{ progress }};background:var(--sess);box-shadow:0 0 12px var(--sess)"></div><div style="position:absolute;left:{{ progress }};top:-7px;width:16px;height:16px;background:var(--t1);transform:translateX(-50%)"></div></div>
       <div style="display:flex;justify-content:space-between;font-size:13px;color:var(--t3);margin-top:12px"><span>{{ elapsed }}</span><span>{{ remaining }}</span></div>
       <div style="display:flex;justify-content:center;gap:var(--gap);margin-top:var(--gap)">
         <button onClick="{{ togglePlay }}" style="width:64px;height:64px;display:flex;align-items:center;justify-content:center;background:transparent;border:1px solid var(--ctrl);border-radius:var(--rBtn);color:var(--t1);cursor:pointer">{{ icoPlayPause }}</button>
@@ -392,6 +400,29 @@ const VERSIONS={
 const FAM={calm:'#63D3E6',sharp:'#4D94F0',restored:'#58BF74',direction:'#E364A8',fit:'#58BF74',heal:'#58BF74',recharge:'#63D3E6',relax:'#63D3E6',snooze:'#63D3E6'};
 const SHOTS={};
 const ORDER=['splash','start','signin','selectdome','bluetooth','pairing','choose','feel','type','mantra','startsession','player','feedback','booking'];
+const PROGRAMS=[
+ [['Accomplish','For increased flow of energy and motivation to be productive.','Combines the soothing sounds of the sea with Theta waves, heightening your receptivity and helping improve procrastination habits.','Theta · Unguided','#4D94F0'],
+  ['Create','When you need inspiration to unlock imagination.','You will experience improved cognitive functioning and a boost of creativity. Best used when you need to feel inspired.','Alpha · Unguided','#E364A8'],
+  ['Focus','To power through your day and mentally prepare.','Helps increase energy and mental acuity. Best used to power through your day, mentally prepare for a workout, or get in the zone.','Beta, Gamma, Theta · Unguided','#4D94F0'],
+  ['Overcome','Perfect for those struggling with addictions or unhealthy habits.','Theta waves increase energy, metabolism, and can help eliminate self-sabotaging habits.','Theta · Unguided','#58BF74'],
+  ['Succeed','Improves your mood and self-esteem.',"Theta waves initiate 'big picture' thinking and can help you to overcome obstacles. Best used before a meeting or throughout your workday.",'Theta · Unguided','#4D94F0']],
+ [['Fit','Best used when you are trying to live a healthier lifestyle.','Induces the ideal state to reprogram your mind with positive thoughts that assist in changing behaviors.','Theta · Guided','#58BF74'],
+  ['Heal','When you feel misaligned or have ailments.','Induces the release of HGH from the pituitary gland, which helps to accelerate healing and boost your immune system.','Delta · Guided','#58BF74'],
+  ['Recharge','Use as a midday pick-me-up, or at the end of a hard day.','Unwinds your mind, promotes creativity, and relieves tension.','Beta, Gamma, Theta · Unguided','#63D3E6'],
+  ['Relax','For when you need a respite.','Alpha waves promote clarity and restoration. Can be used every day to soothe your mind and relieve stress.','Alpha · Unguided','#63D3E6'],
+  ['Snooze','Best for when you need to relax and energize','Delta waves guide you into a restful state of being. Beta waves follow to gradually wake you up from this deep state. These naps provide a fresh burst of energy and help eliminate the need for caffeine during the work day.','Delta to Beta · Unguided','#63D3E6']],
+ [['Achieve','When you need a self confidence boost to achieve your goals','Unleashes a powerful energy that will help you achieve any goal you set for yourself.','Theta · Unguided','#58BF74'],
+  ['Love','Best used when you desire affection for yourself and others.','Induces a state of clarity, increased charisma, and opens you up to the potential of expanded love and deeper connections.','Theta · Guided','#E364A8'],
+  ['Manifest',"When you're starting a journey or setting your intentions.",'About the law of attraction and the connectedness of our Universe, giving you a renewed sense of peace and guidance. Contains dogma-free spiritual references.','Theta · Guided','#E364A8'],
+  ['Prosper','Cultivate a more prosperous attitude towards wealth.','Combines Theta waves and the sounds of ocean swells to reprogram your mind for more prosperity.','Theta · Unguided','#58BF74'],
+  ['Reclaim','When you need to reset your intentions.','The perfect sequel for those who enjoy Manifest. Delivers the same powerful messages about the law of attraction but from a second person perspective.','Delta, Theta · Guided','#E364A8']],
+ [['Ascend','An ideal track for those who have a hard time meditating.',"Access the extraordinary state known as 'Body Asleep-Mind Awake'.",'Beta, Gamma, Theta · Unguided','#E364A8'],
+  ['Aspire',"Explore your heart's deepest desires and imagine them being fulfilled.",'Best used when you need clarity of intention around your desires and the aspiration to fulfill them.','Theta · Guided','#4D94F0'],
+  ['Bliss','Increases charisma and reduces your fears and inhibitions.','Expect to feel immense love and sensuality.','Theta · Unguided','#E364A8'],
+  ['Clarity','A guided visualization to discover your deepest intentions.','Look into your heart and discover the purest, deepest intentions for your life and erase thoughts of lack or limitation.','Theta · Guided','#63D3E6'],
+  ['Confidence','Best used when you are feeling uncertain.','Relaxing sounds of the ocean and subliminal affirmations designed to increase confidence and remove self-doubt.','Theta · Unguided','#4D94F0']]
+].map(list=>list.map(([name,top,more,tag,color])=>({name,top,more,tag,color})));
+const rgba=(h,a)=>{const n=parseInt(h.slice(1),16);return `rgba(${n>>16},${n>>8&255},${n&255},${a})`};
 const TOP={signin:null,selectdome:{t:'Select dome',bt:true},pairing:{t:'Pairing',back:true},intention:{t:'Session menu',close:true},sessions:{t:'Session menu',close:true},feel:{t:'Session helper',close:true},type:{t:'Session helper',close:true},mantra:{t:'Session helper',close:true},startsession:{t:'Start session',back:true},booking:{t:'Booking details'},feedback:{t:'Thanks for your session'}};
 class Component extends DCLogic {
   state={dome:2,intent:null,sess:null,feel:null,type:null,mantra:null,fan:true,skip:false,playing:true,fb:{}};
@@ -417,6 +448,8 @@ class Component extends DCLogic {
     const goPrev=()=>this.nav(screen==='sessions'?'intention':ORDER[Math.max(idx-1,0)]);
     const sel=(key,i,list)=>list.map((o,j)=>Object.assign({},o,{pick:()=>this.setState({[key]:j}),ol:this.state[key]===j?'2px solid var(--guest)':'2px solid transparent',gl:this.state[key]===j?'var(--selGlow)':'none',anim:this.state[key]===j?'var(--glowAnim)':'none',box:box(this.state[key]===j,v.rSm?6:0)}));
     const S=this.state;
+    const progs=PROGRAMS[S.intent===null?1:S.intent],chosen=(S.sess!==null&&progs[S.sess])||PROGRAMS[1][0],sessScreen=screen==='startsession'||screen==='player';
+    frameStyle['--sess']=chosen.color;frameStyle['--famDirection']=chosen.color;frameStyle['--washOp']=screen==='player'?1:.8;
     const feelList=[['Open','sun'],['Aligned','compass'],['Clear','eye'],['Empowered','zap'],['Revitalized','refresh'],['Rested','moon'],['Inspired','bulb'],['Grounded','mountain']].map(([name,ic])=>({name,icon:ico(ic,18)}));
     const feelings=sel('feel',0,feelList).map((f,j)=>Object.assign(f,{iconColor:S.feel===j?'var(--guestText)':'var(--t3)'}));
     const fbQ=[{text:'How supported did you feel during this session (physically, emotionally, and energetically)?',lo:'Not supported',hi:'Deeply supported'},{text:'How refreshed or recharged do you feel compared to before the session?',lo:'Depleted',hi:'Recharged'},{text:'How aligned did this session feel with what you were hoping to receive today (relaxation, clarity, etc.)?',lo:'Not aligned',hi:'Deeply aligned'}];
@@ -428,15 +461,16 @@ class Component extends DCLogic {
       goNext,goPrev,goSessions:()=>this.nav('intention'),goSessionList:()=>this.nav('sessions'),goStartSession:()=>this.nav('startsession'),
       domes:sel('dome',0,[{id:'A-005',name:'Creative Life Dome'},{id:'A-007',name:'Dome Reclaim'},{id:'A-008',name:'Christos Test (Miami)'},{id:'A-009',name:'Dome Create'},{id:'A-010',name:'Dome Motivate'},{id:'A-011',name:'Dome Heal'}]),domeBtnOp:op('dome'),
       devices:[{name:'ESP32 BLE Server',mac:'20:E7:C8:EC:D6:2E'},{name:'Unknown device',mac:'38:8C:EF:F6:77:15'},{name:'Echo-AN7',mac:'61:70:20:C8:18:1D'},{name:"Luca's Room",mac:'CE:2F:72:2C:32:F1'},{name:'Unknown device',mac:'6C:AF:D9:57:93:95'}],
-      intentions:sel('intent',0,[{name:'Mental performance',desc:'Fuel your mind, unlock clarity and move forward with purpose.',dot:FAM.sharp},{name:'Physical wellness',desc:'Let the body rest, recover and realign with its natural rhythm.',dot:FAM.restored},{name:'Attract intentions',desc:'Where your energy meets intention and creates possibility.',dot:FAM.direction},{name:'Going inward',desc:"A space to return to yourself and remember what's within.",dot:FAM.calm}]),intBtnOp:op('intent'),
-      sessions:sel('sess',0,[{name:'Fit',desc:'A guided session using theta waves to support healthy habits and mind-body alignment for lasting change.',dot:FAM.fit},{name:'Heal',desc:'Delta waves to speed physical recovery and boost overall well-being. Best when you feel misaligned or run down.',dot:FAM.heal},{name:'Recharge',desc:'Beta, gamma and theta waves unwind your mind, boost creativity and relieve tension. A midday pick-me-up.',dot:FAM.recharge},{name:'Relax',desc:'An everyday track to ease stress and soothe the nervous system. Alpha waves support calm and clarity.',dot:FAM.relax},{name:'Snooze',desc:'Delta waves guide you into deep rest while beta gently lifts you out. A power nap that restores energy.',dot:FAM.snooze}]),sesBtnOp:op('sess'),
+      intentions:sel('intent',0,[{name:'Mental performance',desc:'Fuel your mind, unlock clarity and move forward with purpose.',dot:FAM.sharp},{name:'Physical wellness',desc:'Let the body rest, recover and realign with its natural rhythm.',dot:FAM.restored},{name:'Attract intentions',desc:'Where your energy meets intention and creates possibility.',dot:FAM.direction},{name:'Going inward',desc:"A space to return to yourself and remember what's within.",dot:FAM.calm}]).map((it,j)=>Object.assign(it,{pick:()=>this.setState({intent:j,sess:null})})),intBtnOp:op('intent'),
+      sessions:progs.map((p,j)=>{const on=S.sess===j;return Object.assign({},p,{pick:()=>this.setState({sess:j}),moreDisp:on?'block':'none',box:box(on,v.rSm?6:0),ol:on?`2px solid ${p.color}`:'2px solid transparent',gl:on?`0 0 0 1px ${p.color},0 0 40px ${rgba(p.color,.5)}`:'none',anim:'none',rowBg:on?`linear-gradient(135deg,${rgba(p.color,.34)},${rgba(p.color,.1)})`:'var(--cardBg)'})}),sesBtnOp:op('sess'),
       feelings,feelName:S.feel===null?'—':feelList[S.feel].name,feelBtnOp:op('feel'),
       types:sel('type',0,[{name:'Guided journey',desc:'A voice leads you through the session.'},{name:'Unguided journey',desc:'Light and sound only.'}]),typeName:S.type===null?'—':['Guided journey','Unguided journey'][S.type],typeBtnOp:op('type'),
       mantras:sel('mantra',0,['I am strong. My body repairs and restores with ease.','I am safe to rest and invite flow to recharge.','I am magnetic. Abundance flows effortlessly to me.','I am aligned with love. My heart opens to receive and give fully.','I am the observer of my inner world. In stillness, I return to truth.','I am rooted in my worth and rising into my highest potential.','I am focused and move forward with purpose.'].map(text=>({text}))),mantraBtnOp:op('mantra'),
-      toggleFan:()=>this.setState({fan:!S.fan}),fanTrack:S.fan?'var(--guest)':'transparent',fanGlow:S.fan?'var(--selGlow)':'none',fanAnim:S.fan?'var(--glowAnim)':'none',skipGlow:S.skip?'var(--selGlow)':'none',skipAnim:S.skip?'var(--glowAnim)':'none',fanKnob:S.fan?'28px':'4px',
-      toggleSkip:()=>this.setState({skip:!S.skip}),skipTrack:S.skip?'var(--guest)':'transparent',skipKnob:S.skip?'28px':'4px',
+      toggleFan:()=>this.setState({fan:!S.fan}),fanTrack:S.fan?'var(--sess)':'transparent',fanGlow:S.fan?`0 0 24px ${rgba(chosen.color,.6)}`:'none',fanAnim:'none',skipGlow:S.skip?`0 0 24px ${rgba(chosen.color,.6)}`:'none',skipAnim:'none',fanKnob:S.fan?'28px':'4px',
+      toggleSkip:()=>this.setState({skip:!S.skip}),skipTrack:S.skip?'var(--sess)':'transparent',skipKnob:S.skip?'28px':'4px',
       togglePlay:()=>this.setState({playing:!S.playing}),progress:'73%',elapsed:'0:13:55',remaining:'-0:05:08',
-      fbQuestions},
+      fbQuestions,chosenName:chosen.name,chosenTag:chosen.tag,chosenTop:chosen.top,chosenMore:chosen.more,chosenKicker:S.sess!==null?'your session':'we recommend',
+      showWash:!cur&&sessScreen,washGlow:rgba(chosen.color,screen==='player'?.55:.4),washGlowAnim:screen==='player'?'smWashIn 1.6s cubic-bezier(.22,.61,.36,1) both,smWashSwell 9s cubic-bezier(.22,.61,.36,1) 1.6s infinite':'smWashIn 1.6s cubic-bezier(.22,.61,.36,1) both'},
       Object.fromEntries(['splash','start','signin','selectdome','bluetooth','pairing','choose','intention','sessions','feel','type','mantra','startsession','player','feedback','booking'].map(id=>['is_'+id,!cur&&is(id)])));
   }
 }
