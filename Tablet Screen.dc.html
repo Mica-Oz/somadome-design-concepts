@@ -279,7 +279,7 @@
 
     <!-- start session -->
     <sc-if value="{{ is_startsession }}" hint-placeholder-val="{{ false }}">
-      <div style="flex:1;min-height:0;overflow:auto;padding:var(--glowPad);margin:0 calc(var(--glowPad) * -1);scrollbar-gutter:stable;-webkit-mask-image:var(--glowMask);mask-image:var(--glowMask);display:flex;flex-direction:column;gap:var(--gap);max-width:880px;width:100%;margin:0 auto">
+      <div style="flex:1;min-height:0;overflow:auto;padding:var(--glowPad);margin:0 calc(var(--glowPad) * -1);scrollbar-gutter:stable;-webkit-mask-image:var(--glowMask);mask-image:var(--glowMask);display:flex;flex-direction:column;gap:var(--gap);box-sizing:border-box;width:calc(100% + var(--glowPad) * 2);max-width:calc(880px + var(--glowPad) * 2);align-self:center">
         <div style="text-align:center">
           <div style="font-size:11px;letter-spacing:.12em;color:var(--t3)">we recommend</div>
           <div style="display:flex;align-items:center;justify-content:center;gap:16px;margin-top:4px"><span style="width:7px;height:7px;border-radius:9999px;background:var(--famDirection)"></span><div style="font-family:var(--hfont);font-weight:var(--hw);font-size:82px;line-height:1;color:var(--t1)">Fit</div></div>
@@ -324,7 +324,7 @@
 
     <!-- feedback -->
     <sc-if value="{{ is_feedback }}" hint-placeholder-val="{{ false }}">
-      <div style="flex:1;min-height:0;overflow:auto;padding:var(--glowPad);margin:0 calc(var(--glowPad) * -1);scrollbar-gutter:stable;-webkit-mask-image:var(--glowMask);mask-image:var(--glowMask);display:flex;flex-direction:column;gap:var(--gapL);max-width:960px;width:100%;margin:0 auto">
+      <div style="flex:1;min-height:0;overflow:auto;padding:var(--glowPad);margin:0 calc(var(--glowPad) * -1);scrollbar-gutter:stable;-webkit-mask-image:var(--glowMask);mask-image:var(--glowMask);display:flex;flex-direction:column;gap:var(--gapL);box-sizing:border-box;width:calc(100% + var(--glowPad) * 2);max-width:calc(960px + var(--glowPad) * 2);align-self:center">
         <div style="text-align:center">
           <div style="font-family:var(--hfont);font-weight:var(--hw);font-size:38px;line-height:1.05;color:var(--t1)">How are you feeling after your session?</div>
         </div>
