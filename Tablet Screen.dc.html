@@ -107,7 +107,8 @@
     <sc-if value="{{ is_start }}" hint-placeholder-val="{{ false }}">
       <div style="display:flex;justify-content:flex-end;color:var(--t3)">{{ icoBt }}</div>
       <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:var(--gapL)">
-        <sc-if value="{{ showDome }}" hint-placeholder-val="{{ false }}"><img src="assets/dome-object-open.png" alt="Somadome dome" style="width:44%;max-width:480px"></sc-if>
+        <sc-if value="{{ showDomeImg }}" hint-placeholder-val="{{ false }}"><img src="assets/dome-object-open.png" alt="Somadome dome" style="width:44%;max-width:480px"></sc-if>
+        <sc-if value="{{ showDome3d }}" hint-placeholder-val="{{ false }}"><iframe src="{{ domeSrc }}" title="Somadome 3D model" style="width:56%;max-width:620px;aspect-ratio:4 / 3;border:0;background:transparent;color-scheme:normal;display:block"></iframe></sc-if>
         <div style="text-align:center;max-width:640px">
           <div style="font-family:var(--hfont);font-weight:var(--hw);font-size:48px;line-height:1;color:var(--t1)">Somadome helps you soar.</div>
           <div style="margin-top:12px;color:var(--t2);font-size:17px">Activate your higher self.</div>
@@ -471,8 +472,8 @@ class Component extends DCLogic {
       toggleFan:()=>this.setState({fan:!S.fan}),fanTrack:S.fan?'var(--sess)':'transparent',fanGlow:S.fan?`0 0 24px ${rgba(chosen.color,.6)}`:'none',fanAnim:'none',skipGlow:S.skip?`0 0 24px ${rgba(chosen.color,.6)}`:'none',skipAnim:'none',fanKnob:S.fan?'28px':'4px',
       toggleSkip:()=>this.setState({skip:!S.skip}),skipTrack:S.skip?'var(--sess)':'transparent',skipKnob:S.skip?'28px':'4px',
       togglePlay:()=>this.setState({playing:!S.playing}),progress:'73%',elapsed:'0:13:55',remaining:'-0:05:08',
-      fbQuestions,liteAttr:lite?'1':'0',chosenName:chosen.name,chosenTag:chosen.tag,chosenTop:chosen.top,chosenMore:chosen.more,chosenKicker:S.sess!==null?'your session':'we recommend',
-      showWash:!cur&&sessScreen,washGlow:rgba(chosen.color,screen==='player'?.55:.4),washGlowAnim:screen==='player'?'smWashIn 1.6s cubic-bezier(.22,.61,.36,1) both,smWashSwell 9s cubic-bezier(.22,.61,.36,1) 1.6s infinite':'smWashIn 1.6s cubic-bezier(.22,.61,.36,1) both'},
+      fbQuestions,liteAttr:lite?'1':'0',showDomeImg:!!v.dome&&!(this.props.dome3d&&!lite),showDome3d:!!v.dome&&!!this.props.dome3d&&!lite,domeSrc:'dome-3d.html?theme='+(['white','lavender'].includes(this.props.theme)?'light':'dark'),chosenName:chosen.name,chosenTag:chosen.tag,chosenTop:chosen.top,chosenMore:chosen.more,chosenKicker:S.sess!==null?'your session':'we recommend',
+      showWash:!cur&&sessScreen&&(this.props.sessionWash??true),washGlow:rgba(chosen.color,screen==='player'?.55:.4),washGlowAnim:screen==='player'?'smWashIn 1.6s cubic-bezier(.22,.61,.36,1) both,smWashSwell 9s cubic-bezier(.22,.61,.36,1) 1.6s infinite':'smWashIn 1.6s cubic-bezier(.22,.61,.36,1) both'},
       Object.fromEntries(['splash','start','signin','selectdome','bluetooth','pairing','choose','intention','sessions','feel','type','mantra','startsession','player','feedback','booking'].map(id=>['is_'+id,!cur&&is(id)])));
   }
 }

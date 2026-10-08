@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Somadome 3D</title>
+<!-- Embeddable 3D Somadome on a transparent background. Query params: ?theme=light|dark (default dark), ?color=%23RRGGBB -->
+<style>
+  html, body { height: 100%; margin: 0; background: transparent; overflow: hidden; }
+  #stage { position: fixed; inset: 0; }
+  #stage canvas { display: block; width: 100%; height: 100%; outline: none; }
+  #fallback { display: none; width: 100%; height: 100%; object-fit: contain; }
+</style>
+</head>
+<body>
+<div id="stage" aria-label="Interactive 3D model of the Somadome. Drag to orbit."></div>
+<img id="fallback" src="assets/dome-object-open.png" alt="Somadome dome">
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/environments/RoomEnvironment.js"></script>
+<script>
+(function () {
+  const stage = document.getElementById('stage');
+  const params = new URLSearchParams(location.search);
+  const DARK = params.get('theme') !== 'light';
+  const START_COLOR = /^#[0-9a-f]{6}$/i.test(params.get('color') || '') ? params.get('color') : '#8A4DFF';
+  const coarse = window.matchMedia('(pointer: coarse)').matches;
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function isDark() { return DARK; }
+  function showFallback() { stage.style.display = 'none'; document.getElementById('fallback').style.display = 'block'; }
+
+  // ---------- renderer / scene ----------
+  let renderer;
+  try {
+    if (!window.THREE) throw new Error('three.js failed to load');
+    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  } catch (e) { showFallback(); return; }
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, coarse ? 1.5 : 2));
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.05;
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.setClearColor(0x000000, 0);
+  stage.appendChild(renderer.domElement);
+  renderer.domElement.addEventListener('webglcontextlost', e => { e.preventDefault(); showFallback(); });
+
+  const scene = new THREE.Scene();
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  scene.environment = pmrem.fromScene(new THREE.RoomEnvironment(), 0.04).texture;
+
+  const camera = new THREE.PerspectiveCamera(32, 1, 0.05, 100);
+  camera.position.set(-5.4, 2.9, 6.6);
+
+  const controls = new THREE.OrbitControls(camera, renderer.domElement);
+  controls.target.set(0.1, 1.3, 0);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.06;
+  controls.enableZoom = false;              // scrolling the page shouldn't zoom the model
+  controls.enablePan = false;
+  controls.maxPolarAngle = Math.PI * 0.495;
+  controls.autoRotate = true;
+  controls.autoRotateSpeed = 0;             // eased toward presentSpeed in the loop
+  renderer.domElement.style.touchAction = 'pan-y';   // vertical swipes still scroll the page on phones
+  // turntable by default; a drag takes over, and the spin resumes after a few idle seconds
+  let presenting = true, presentSpeed = 0, idleTimer = 0;
+  controls.addEventListener('start', () => { presenting = false; clearTimeout(idleTimer); });
+  controls.addEventListener('end', () => { clearTimeout(idleTimer); idleTimer = setTimeout(() => { presenting = true; }, 5000); });
+
+  // ---------- lights ----------
+  const hemi = new THREE.HemisphereLight(0xf4efff, 0x5a4a8a, 0.55);
+  scene.add(hemi);
+  const key = new THREE.DirectionalLight(0xffffff, 1.6);
+  key.position.set(-3, 6, 4);
+  key.castShadow = true;
+  key.shadow.mapSize.set(coarse ? 1024 : 2048, coarse ? 1024 : 2048);
+  key.shadow.camera.left = -3; key.shadow.camera.right = 3;
+  key.shadow.camera.top = 3; key.shadow.camera.bottom = -3;
+  key.shadow.radius = 6;
+  key.shadow.bias = -0.0004;
+  scene.add(key);
+  const rim = new THREE.DirectionalLight(0xc9b6ff, 0.8);
+  rim.position.set(4, 3, -4);
+  scene.add(rim);
+
+  // frequency light (the therapy colour)
+  const freq = { color: new THREE.Color(START_COLOR), target: new THREE.Color(START_COLOR) };
+  const glowLight = new THREE.PointLight(0x8a4dff, 4, 3.2, 2);
+  scene.add(glowLight);
+  const spill = new THREE.PointLight(0x8a4dff, 1.6, 4.5, 2);
+  scene.add(spill);
+
+  // ---------- materials ----------
+  // gel-coat white: glossy fibreglass with a hard clear coat
+  const shellMat = new THREE.MeshPhysicalMaterial({
+    color: 0xf1f1f4, roughness: 0.2, metalness: 0.0,
+    clearcoat: 1.0, clearcoatRoughness: 0.05, flatShading: true, envMapIntensity: 0.75
+  });
+  const trimMat = new THREE.MeshPhysicalMaterial({ color: 0xebeaf0, roughness: 0.28, clearcoat: 0.8, clearcoatRoughness: 0.12, envMapIntensity: 0.7 });
+
+  // procedural fabric pile for the velvet bump map
+  const fabricTex = (() => {
+    const cv = document.createElement('canvas'); cv.width = cv.height = 256;
+    const x = cv.getContext('2d');
+    const img = x.createImageData(256, 256);
+    for (let i = 0; i < 256 * 256; i++) {
+      const v = 118 + Math.random() * 40;
+      img.data[i * 4] = img.data[i * 4 + 1] = img.data[i * 4 + 2] = v; img.data[i * 4 + 3] = 255;
+    }
+    x.putImageData(img, 0, 0);
+    const t = new THREE.CanvasTexture(cv);
+    t.wrapS = t.wrapT = THREE.RepeatWrapping;
+    return t;
+  })();
+  const velvetPadMat = new THREE.MeshPhysicalMaterial({
+    color: 0x3b1f78, roughness: 1.0, metalness: 0,
+    sheen: 1.0, sheenRoughness: 0.5, sheenColor: new THREE.Color(0x7a5cc8),
+    bumpMap: fabricTex, bumpScale: 0.05, envMapIntensity: 0.18, side: THREE.DoubleSide
+  });
+  const liningMat = new THREE.MeshStandardMaterial({ color: 0x1e0f40, roughness: 1, side: THREE.DoubleSide });
+  // polished steel rod with its own high-contrast studio reflection (dark floor, bright softbox bands)
+  const steelEnv = (() => {
+    const cv = document.createElement('canvas'); cv.width = 512; cv.height = 256;
+    const x = cv.getContext('2d');
+    const g = x.createLinearGradient(0, 0, 0, 256);
+    g.addColorStop(0, '#6d6a78'); g.addColorStop(0.42, '#d9d7e2'); g.addColorStop(0.5, '#ffffff');
+    g.addColorStop(0.56, '#3a3646'); g.addColorStop(1, '#0d0b14');
+    x.fillStyle = g; x.fillRect(0, 0, 512, 256);
+    x.fillStyle = 'rgba(255,255,255,0.95)';
+    [[60, 40], [250, 22], [400, 34]].forEach(([px, wd]) => x.fillRect(px, 40, wd, 70));
+    x.fillStyle = 'rgba(160,120,255,0.55)'; x.fillRect(300, 120, 90, 30);
+    const t = new THREE.CanvasTexture(cv);
+    t.mapping = THREE.EquirectangularReflectionMapping; t.encoding = THREE.sRGBEncoding;
+    return pmrem.fromEquirectangular(t).texture;
+  })();
+  const chromeMat = new THREE.MeshStandardMaterial({ color: 0xd4d7dd, metalness: 1.0, roughness: 0.14, envMap: steelEnv, envMapIntensity: 1.1 });
+  const ledMat = new THREE.MeshBasicMaterial({ color: 0xc6a8ff, side: THREE.DoubleSide, toneMapped: false });
+  // canopy diffuser: brightest at the LED rim, falling off toward the crown
+  const diffuserTex = (() => {
+    const cv = document.createElement('canvas'); cv.width = 4; cv.height = 256;
+    const x = cv.getContext('2d');
+    const g = x.createLinearGradient(0, 0, 0, 256);
+    g.addColorStop(0, '#9a9a9a'); g.addColorStop(0.55, '#c8c8c8'); g.addColorStop(0.9, '#ffffff'); g.addColorStop(1, '#ffffff');
+    x.fillStyle = g; x.fillRect(0, 0, 4, 256);
+    const t = new THREE.CanvasTexture(cv); t.encoding = THREE.sRGBEncoding; return t;
+  })();
+  const domeOuterMat = new THREE.MeshPhysicalMaterial({
+    color: 0x2b2540, roughness: 0.55, metalness: 0, clearcoat: 1, clearcoatRoughness: 0.35, envMapIntensity: 0.22,
+    emissive: 0x8a4dff, emissiveMap: diffuserTex, emissiveIntensity: 0.6,
+    transparent: true, opacity: 0.8, depthWrite: false, side: THREE.FrontSide, toneMapped: false
+  });
+  const domeInnerMat = new THREE.MeshStandardMaterial({
+    color: 0x000000, emissive: 0x8a4dff, emissiveMap: diffuserTex, emissiveIntensity: 0.9, roughness: 1, side: THREE.BackSide,
+    transparent: true, opacity: 0.78, depthWrite: false, toneMapped: false
+  });
+  // ottoman base: same purple velvet as the dome interior (pile scaled to its UVs)
+  const velvetMat = velvetPadMat.clone();
+  const ottFabric = fabricTex.clone(); ottFabric.needsUpdate = true; ottFabric.repeat.set(14, 14);
+  velvetMat.bumpMap = ottFabric;
+  velvetMat.side = THREE.FrontSide;
+
+  // ---------- helpers ----------
+  function tube(a, b, r, mat) {
+    const g = new THREE.TubeGeometry(new THREE.LineCurve3(a, b), 1, r, 10, false);
+    const m = new THREE.Mesh(g, mat);
+    m.castShadow = true;
+    return m;
+  }
+  function wireFrame(points, edges, r, mat) {
+    const g = new THREE.Group();
+    edges.forEach(([i, j]) => g.add(tube(points[i], points[j], r, mat)));
+    points.forEach(p => { // small joint caps so corners read clean
+      const s = new THREE.Mesh(new THREE.SphereGeometry(r * 1.05, 10, 8), mat);
+      s.position.copy(p); g.add(s);
+    });
+    return g;
+  }
+  function radialTexture(stops) {
+    const c = document.createElement('canvas'); c.width = c.height = 256;
+    const x = c.getContext('2d');
+    const gr = x.createRadialGradient(128, 128, 0, 128, 128, 128);
+    stops.forEach(([o, col]) => gr.addColorStop(o, col));
+    x.fillStyle = gr; x.fillRect(0, 0, 256, 256);
+    const t = new THREE.CanvasTexture(c); t.encoding = THREE.sRGBEncoding;
+    return t;
+  }
+
+  // ---------- pod hull (faceted) ----------
+  // Local frame: x runs foot -> head, y up (rim at y=0), z across.
+  // Each section: [x-at-rim, x-at-mid, x-at-bottom, halfWidth, depth, midDrop]
+  const sections = [
+    [0.00, 0.12, 0.30, 0.54, 0.50, 0.30],
+    [0.55, 0.55, 0.62, 0.72, 0.70, 0.32],
+    [1.12, 1.10, 1.12, 0.80, 0.76, 0.30],
+    [1.62, 1.64, 1.58, 0.80, 0.62, 0.34],
+    [2.02, 1.98, 1.84, 0.78, 0.42, 0.36]
+  ];
+  // big flat panels like the real shell: rim -> one tall side panel -> crease -> broad flat underside
+  function profile(w, d, md, alt) {
+    const crease = -d * (alt ? 0.62 : 0.5);             // staggered creases turn the side panels into big triangles
+    const L = [[-w, 0], [-w * 1.04, crease], [-w * (alt ? 0.38 : 0.46), -d]];
+    const Rt = L.slice().reverse().map(([z, y]) => [-z, y]);
+    return L.concat(Rt);
+  }
+  function ring(sec, i) {
+    const [xr, , xb, w, d, md] = sec;
+    return profile(w, d, md, i % 2 === 1).map(([z, y]) => new THREE.Vector3(xr + (xb - xr) * (-y / d), y, z));
+  }
+  const rings = sections.map(ring);
+  const pos = [];
+  function tri(a, b, c) { pos.push(a.x, a.y, a.z, b.x, b.y, b.z, c.x, c.y, c.z); }
+  for (let i = 0; i < rings.length - 1; i++) {
+    const A = rings[i], B = rings[i + 1];
+    for (let j = 0; j < A.length - 1; j++) {
+      if ((i + j) % 2 === 0) { tri(A[j], B[j], B[j + 1]); tri(A[j], B[j + 1], A[j + 1]); }
+      else { tri(A[j], B[j], A[j + 1]); tri(B[j], B[j + 1], A[j + 1]); }
+    }
+  }
+  // end caps
+  function cap(R, flip) {
+    for (let j = 1; j < R.length - 1; j++) flip ? tri(R[0], R[j], R[j + 1]) : tri(R[0], R[j + 1], R[j]);
+  }
+  // leg opening: follows the faceted foot wall (inset), with generously rounded corners, open at the top
+  function uPath(topY) {
+    const s0 = sections[0], wi0 = s0[3] - 0.075, di0 = s0[4] * 0.8 - 0.02;
+    const ip = profile(wi0, di0, s0[5], false);
+    const c = new THREE.Vector2(0, -di0 * 0.42);
+    const sc = k => c.clone().add(new THREE.Vector2(ip[k][0], ip[k][1]).sub(c).multiplyScalar(0.86));
+    const cL = sc(1), bL = sc(2), bR = sc(3), cR = sc(4);
+    const seq = [new THREE.Vector2(cR.x, topY), cR, bR, bL, cL, new THREE.Vector2(cL.x, topY)];
+    const out = [seq[0]];
+    for (let k = 1; k < seq.length - 1; k++) {
+      const A = seq[k - 1], Q = seq[k], B = seq[k + 1];
+      const p0 = Q.clone().lerp(A, 0.42), p2 = Q.clone().lerp(B, 0.42);
+      for (let n = 0; n <= 8; n++) {
+        const t = n / 8, u = 1 - t;
+        out.push(new THREE.Vector2(u * u * p0.x + 2 * u * t * Q.x + t * t * p2.x, u * u * p0.y + 2 * u * t * Q.y + t * t * p2.y));
+      }
+    }
+    out.push(seq[seq.length - 1]);
+    return out;
+  }
+  const footX = y => sections[0][2] * (-y / sections[0][4]);       // the foot face is a single slanted plane
+  const outerU = uPath(0);
+  function notchedFace(ringPts, uPts, mapX, triFn) {
+    const contour = ringPts.map(p => new THREE.Vector2(p.z, p.y)).concat(uPts);
+    const faces = THREE.ShapeUtils.triangulateShape(contour, []);
+    const to3 = v => new THREE.Vector3(mapX(v.y), v.y, v.x);
+    faces.forEach(f => triFn(to3(contour[f[0]]), to3(contour[f[1]]), to3(contour[f[2]])));
+  }
+  notchedFace(rings[0], outerU, footX, tri);
+  cap(rings[rings.length - 1], true);
+  const hullGeo = new THREE.BufferGeometry();
+  hullGeo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  hullGeo.computeVertexNormals();
+  const hull = new THREE.Mesh(hullGeo, shellMat);
+  hull.castShadow = true; hull.receiveShadow = true;
+  // render both sides so winding can't leave holes
+  shellMat.side = THREE.DoubleSide;
+
+  // ---------- interior tub: inner rim, lining and geometric velvet pads ----------
+  const last = sections.length - 1;
+  const INNER_DEPTH = sec => sec[4] * 0.8 - 0.02;
+  function innerRing(sec, i) {
+    const [xr, , xb, w, d, md] = sec;
+    const XR = xr + (i === 0 ? 0.085 : i === last ? -0.075 : 0);
+    const XB = xb + (i === 0 ? 0.06 : i === last ? -0.05 : 0);
+    const wi = w - 0.075, di = INNER_DEPTH(sec);
+    return profile(wi, di, md, i % 2 === 1).map(([z, y]) => {
+      const yy = y === 0 ? -0.012 : y;
+      return new THREE.Vector3(XR + (XB - XR) * (-yy / di), yy, z);
+    });
+  }
+  const inner = sections.map(innerRing);
+
+  // rim lip: a U-shaped band (open at the foot) between the outer and inner rim outlines
+  // shapes are built in (x, -z) so rotating -90° about X lands them flat with correct z
+  const flip = poly => poly.map(p => new THREE.Vector2(p.x, -p.y));
+  const uBand = rings.map(r => new THREE.Vector2(r[0].x, r[0].z))
+    .concat(rings.map(r => new THREE.Vector2(r[r.length - 1].x, r[r.length - 1].z)).reverse())
+    .concat(inner.map(r => new THREE.Vector2(r[r.length - 1].x, r[r.length - 1].z)))
+    .concat(inner.map(r => new THREE.Vector2(r[0].x, r[0].z)).reverse());
+  const rimShape = new THREE.Shape(flip(uBand));
+  const rimMesh = new THREE.Mesh(
+    new THREE.ExtrudeGeometry(rimShape, { depth: 0.03, bevelEnabled: true, bevelThickness: 0.012, bevelSize: 0.01, bevelSegments: 3 }),
+    trimMat
+  );
+  rimMesh.rotation.x = -Math.PI / 2;
+  rimMesh.position.y = -0.012;
+  rimMesh.castShadow = true;
+
+  // dark base lining (shows as the seams between pads)
+  const linePos = [];
+  const ltri = (a, b, c) => linePos.push(a.x, a.y, a.z, b.x, b.y, b.z, c.x, c.y, c.z);
+  const NR = inner[0].length;
+  for (let i = 0; i < last; i++) for (let j = 0; j < NR - 1; j++) {
+    const A = inner[i], B = inner[i + 1];
+    ltri(A[j], B[j], B[j + 1]); ltri(A[j], B[j + 1], A[j + 1]);
+  }
+  [inner[last]].forEach(Rg => { for (let j = 1; j < NR - 1; j++) ltri(Rg[0], Rg[j], Rg[j + 1]); });
+  const innerFootX = y => 0.085 + (sections[0][2] + 0.06 - 0.085) * (-y / INNER_DEPTH(sections[0]));
+  const innerU = uPath(-0.012);
+  notchedFace(inner[0], innerU, innerFootX, ltri);
+  // the reveal: white shell surface lining the cut between outer face and inner wall
+  const revealPos = [];
+  const rtri = (a, b, c) => revealPos.push(a.x, a.y, a.z, b.x, b.y, b.z, c.x, c.y, c.z);
+  const o3 = v => new THREE.Vector3(footX(v.y), v.y, v.x), i3 = v => new THREE.Vector3(innerFootX(v.y), v.y, v.x);
+  for (let k = 0; k < outerU.length - 1; k++) {
+    const a = o3(outerU[k]), b = o3(outerU[k + 1]), c = i3(innerU[k + 1]), d = i3(innerU[k]);
+    rtri(a, b, c); rtri(a, c, d);
+  }
+  // top caps between the outer face and inner wall, either side of the opening
+  [-1, 1].forEach(sg => {
+    // closed corner blocks: flush with the rim lip on top, down to the foot face and inner wall, capped at the opening
+    const wO = sections[0][3], wI = wO - 0.075, h = uPath(0)[0].x;
+    const yTop = 0.03, yOut = 0, yIn = -0.012, xIn = 0.085;
+    const tA = new THREE.Vector3(0, yTop, sg * h), tB = new THREE.Vector3(0, yTop, sg * wO);
+    const tC = new THREE.Vector3(xIn, yTop, sg * wI), tD = new THREE.Vector3(xIn, yTop, sg * h);
+    const oA = new THREE.Vector3(0, yOut, sg * h), oB = new THREE.Vector3(0, yOut, sg * wO);
+    const iC = new THREE.Vector3(xIn, yIn, sg * wI), iD = new THREE.Vector3(xIn, yIn, sg * h);
+    rtri(tA, tB, tC); rtri(tA, tC, tD);          // top, level with the lip
+    rtri(oA, oB, tB); rtri(oA, tB, tA);          // outer face strip
+    rtri(iD, iC, tC); rtri(iD, tC, tD);          // inner wall strip
+    rtri(oA, tA, tD); rtri(oA, tD, iD);          // end face at the opening
+    rtri(oB, iC, tC); rtri(oB, tC, tB);          // far side, under the lip end
+  });
+  const revealGeo = new THREE.BufferGeometry();
+  revealGeo.setAttribute('position', new THREE.Float32BufferAttribute(revealPos, 3));
+  revealGeo.computeVertexNormals();
+  const reveal = new THREE.Mesh(revealGeo, new THREE.MeshPhysicalMaterial({ color: 0xf1f1f4, roughness: 0.22, clearcoat: 1, clearcoatRoughness: 0.06, side: THREE.DoubleSide }));
+  const liningGeo = new THREE.BufferGeometry();
+  liningGeo.setAttribute('position', new THREE.Float32BufferAttribute(linePos, 3));
+  liningGeo.computeVertexNormals();
+  const lining = new THREE.Mesh(liningGeo, liningMat);
+  lining.receiveShadow = true;
+
+  // faceted upholstery: every lining facet becomes a soft pyramid pad
+  const padPos = [], padUv = [], padNrm = [];
+  let curC = null, curN = null, curS = 1, curRad = 1;
+  const curT1 = new THREE.Vector3(), curT2 = new THREE.Vector3();
+  function frameOf(q) {
+    const C = q.reduce((a, p) => a.add(p), new THREE.Vector3()).multiplyScalar(1 / q.length);
+    const n = new THREE.Vector3().subVectors(q[1], q[0]).cross(new THREE.Vector3().subVectors(q[q.length - 1], q[0])).normalize();
+    if (n.dot(new THREE.Vector3(C.x, 0.3, 0).sub(C)) < 0) n.negate();
+    return { C, n };
+  }
+  function ptri(a, b, c) {
+    [a, b, c].forEach(p => {
+      padPos.push(p.x, p.y, p.z);
+      padUv.push(p.dot(curT1) * 14, p.dot(curT2) * 14);   // planar UVs per panel: no stretched pile
+      // soft "stuffed" normal: straight out at the crown, rolling over toward the seams
+      const t = p.clone().sub(curC).projectOnPlane(curN);
+      const e = THREE.MathUtils.clamp((t.length() / curRad - 0.6) / 0.4, 0, 1);
+      const nn = curN.clone().add(t.normalize().multiplyScalar(e * e * 1.6)).normalize();
+      padNrm.push(nn.x, nn.y, nn.z);
+    });
+  }
+  function pillow(q, hMax = 0.06) {
+    const { C, n } = frameOf(q);
+    const size = q.reduce((m, p, k) => Math.max(m, p.distanceTo(q[(k + 1) % q.length])), 0);
+    const h = Math.min(hMax, size * 0.1);
+    curC = C; curN = n; curS = size * 0.32;
+    curT1.copy(Math.abs(n.y) < 0.9 ? new THREE.Vector3(0, 1, 0) : new THREE.Vector3(1, 0, 0)).cross(n).normalize();
+    curT2.crossVectors(n, curT1).normalize();
+    curRad = q.reduce((m, p) => Math.max(m, p.clone().sub(C).projectOnPlane(n).length()), 0) * 0.97;
+    const base = q.map(p => C.clone().add(p.clone().sub(C).multiplyScalar(0.97)).addScaledVector(n, 0.003));
+    const top = q.map(p => C.clone().add(p.clone().sub(C).multiplyScalar(0.9)).addScaledVector(n, h * 0.72));
+    const N = q.length;
+    const mids = top.map((p, k) => p.clone().add(top[(k + 1) % N]).multiplyScalar(0.5).addScaledVector(n, h * 0.22));
+    const peak = C.clone().addScaledVector(n, h);
+    for (let k = 0; k < N; k++) {
+      const a = top[k], b = top[(k + 1) % N], m = mids[k];
+      ptri(a, m, peak); ptri(m, b, peak);
+      ptri(base[k], base[(k + 1) % N], b); ptri(base[k], b, a);
+    }
+  }
+  for (let i = 0; i < last; i++) for (let j = 0; j < NR - 1; j++) {
+    const q = [inner[i][j], inner[i + 1][j], inner[i + 1][j + 1], inner[i][j + 1]];
+    const floorJ = (NR - 2) / 2;
+    if (j === floorJ) { if (i === 0) pillow(q, 0.07); continue; }   // leg cushion; the back is one big cushion below
+    // side walls: big triangular panels
+    if ((i + j) % 2 === 0) { pillow([q[0], q[1], q[2]]); pillow([q[0], q[2], q[3]]); }
+    else { pillow([q[0], q[1], q[3]]); pillow([q[1], q[2], q[3]]); }
+  }
+  [inner[last]].forEach(Rg => {
+    for (let k = 0; k < (NR - 1) / 2 - 1; k++) pillow([Rg[k], Rg[k + 1], Rg[NR - 2 - k], Rg[NR - 1 - k]]);
+    if (NR % 2 === 1) { const mid = (NR - 1) / 2; pillow([Rg[mid - 1], Rg[mid], Rg[mid + 1]]); }
+  });
+  // one large central back cushion running the length of the recline
+  {
+    const fj = (NR - 2) / 2, back = [];
+    for (let i = 1; i <= last; i++) back.push(inner[i][fj]);
+    for (let i = last; i >= 1; i--) back.push(inner[i][fj + 1]);
+    pillow(back, 0.1);
+  }
+  const padGeo = new THREE.BufferGeometry();
+  padGeo.setAttribute('position', new THREE.Float32BufferAttribute(padPos, 3));
+  padGeo.setAttribute('uv', new THREE.Float32BufferAttribute(padUv, 2));
+  padGeo.setAttribute('normal', new THREE.Float32BufferAttribute(padNrm, 3));
+  const pads = new THREE.Mesh(padGeo, velvetPadMat);
+  pads.receiveShadow = true;
+
+  // ---------- dome canopy ----------
+  const R = 0.78;                           // dome as wide as the widest part of the bowl
+  const PLATE = 0.055;                      // lid frame thickness
+  const HINGE_X = 2.02, DOME_X = 1.22;      // hinge on the head-end rim; dome centred over the widest section
+  const dome = new THREE.Group();          // pivots at the hinge
+  dome.position.set(HINGE_X, 0.03, 0);
+  const domeBody = new THREE.Group();
+  domeBody.position.set(DOME_X - HINGE_X, PLATE, 0);
+  dome.add(domeBody);
+  {
+    // the lid frame follows the body's rim exactly (squared front included), so closed it seals edge to edge
+    const outline = rings.map(r => new THREE.Vector2(r[0].x - HINGE_X, -r[0].z))
+      .concat(rings.map(r => { const q = r[r.length - 1]; return new THREE.Vector2(q.x - HINGE_X, -q.z); }).reverse());
+    const plateShape = new THREE.Shape(outline);
+    const hole = new THREE.Path(); hole.absarc(DOME_X - HINGE_X, 0, R - 0.012, 0, Math.PI * 2, true);
+    plateShape.holes.push(hole);
+    const plateGeo = new THREE.ExtrudeGeometry(plateShape, { depth: PLATE - 0.012, bevelEnabled: true, bevelThickness: 0.006, bevelSize: 0.004, bevelSegments: 3, curveSegments: 96 });
+    plateGeo.rotateX(-Math.PI / 2);
+    plateGeo.translate(0, 0.006, 0);
+    const plate = new THREE.Mesh(plateGeo, trimMat);
+    plate.castShadow = true; plate.receiveShadow = true;
+    dome.add(plate);
+  }
+
+  const hemiGeo = new THREE.SphereGeometry(R, 96, 48, 0, Math.PI * 2, 0, Math.PI / 2);
+  const domeOuter = new THREE.Mesh(hemiGeo, domeOuterMat);
+  domeOuter.castShadow = true;
+  const domeInner = new THREE.Mesh(new THREE.SphereGeometry(R - 0.012, 96, 48, 0, Math.PI * 2, 0, Math.PI / 2), domeInnerMat);
+  domeInner.renderOrder = 2; domeOuter.renderOrder = 3;
+  domeBody.add(domeOuter, domeInner);
+
+  // fresnel aura around the canopy
+  const auraMat = new THREE.ShaderMaterial({
+    uniforms: { uColor: { value: new THREE.Color(START_COLOR) }, uStrength: { value: 0.9 } },
+    vertexShader: `
+      varying vec3 vN; varying vec3 vV;
+      void main(){
+        vec4 mv = modelViewMatrix * vec4(position,1.0);
+        vN = normalize(normalMatrix * normal);
+        vV = normalize(-mv.xyz);
+        gl_Position = projectionMatrix * mv;
+      }`,
+    fragmentShader: `
+      uniform vec3 uColor; uniform float uStrength;
+      varying vec3 vN; varying vec3 vV;
+      void main(){
+        float f = pow(1.0 - abs(dot(vN, vV)), 2.6);
+        gl_FragColor = vec4(uColor * f * uStrength, f * uStrength);
+      }`,
+    transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.FrontSide
+  });
+  const aura = new THREE.Mesh(new THREE.SphereGeometry(R + 0.05, 64, 32, 0, Math.PI * 2, 0, Math.PI / 2), auraMat);
+  domeBody.add(aura);
+
+  // LED ring under the lid frame, circling the dome opening
+  const led = new THREE.Mesh(new THREE.RingGeometry(R - 0.012, R + 0.03, 128), ledMat);
+  led.rotation.x = Math.PI / 2;
+  led.position.y = -PLATE - 0.002;
+  domeBody.add(led);
+  // halo hugging the LED rim (fakes lens bloom around the light strip)
+  const rimGlowTex = (() => {
+    const cv = document.createElement('canvas'); cv.width = cv.height = 512;
+    const x = cv.getContext('2d');
+    const g = x.createRadialGradient(256, 256, 0, 256, 256, 256);
+    const r0 = R / (R * 1.55);           // where the LED sits, as a fraction of the plane radius
+    g.addColorStop(0, 'rgba(255,255,255,0.0)');
+    g.addColorStop(Math.max(0, r0 - 0.22), 'rgba(255,255,255,0.18)');
+    g.addColorStop(r0 - 0.015, 'rgba(255,255,255,1)');
+    g.addColorStop(r0 + 0.02, 'rgba(255,255,255,0.75)');
+    g.addColorStop(Math.min(1, r0 + 0.14), 'rgba(255,255,255,0.18)');
+    g.addColorStop(1, 'rgba(255,255,255,0)');
+    x.fillStyle = g; x.fillRect(0, 0, 512, 512);
+    return new THREE.CanvasTexture(cv);
+  })();
+  const rimGlowMat = new THREE.MeshBasicMaterial({ map: rimGlowTex, color: 0x8a4dff, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide, toneMapped: false });
+  const rimGlow = new THREE.Mesh(new THREE.PlaneGeometry(R * 3.1, R * 3.1), rimGlowMat);
+  rimGlow.rotation.x = -Math.PI / 2;
+  rimGlow.position.y = -PLATE - 0.006;
+  domeBody.add(rimGlow);
+  const domeLight = new THREE.PointLight(0x8a4dff, 2, 3.4, 2);
+  domeLight.position.set(0, 0.25, 0);
+  domeBody.add(domeLight);
+
+  // inner halo sprite (soft light pooled inside the canopy)
+  const haloTex = radialTexture([[0, 'rgba(255,255,255,0.9)'], [0.25, 'rgba(255,255,255,0.35)'], [1, 'rgba(255,255,255,0)']]);
+  const haloMat = new THREE.SpriteMaterial({ map: haloTex, color: 0x8a4dff, blending: THREE.AdditiveBlending, depthWrite: false, transparent: true, opacity: 0.55 });
+  const halo = new THREE.Sprite(haloMat);
+  halo.scale.set(3.4, 3.4, 1);
+
+  // soft light volume pooled over the upholstery
+  const bedGlowMat = new THREE.MeshBasicMaterial({ map: haloTex, color: 0x8a4dff, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false });
+  const bedGlow = new THREE.Mesh(new THREE.PlaneGeometry(2.8, 1.9), bedGlowMat);
+  bedGlow.rotation.x = -Math.PI / 2;
+  bedGlow.position.set(1.0, 0.03, 0);
+
+  // ---------- assemble pod ----------
+  const pod = new THREE.Group();
+  const hinges = new THREE.Group();
+  [-0.42, 0.42].forEach(z => {
+    const k = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.028, 0.16, 20), chromeMat);
+    k.rotation.x = Math.PI / 2; k.position.set(HINGE_X + 0.01, 0.03, z); hinges.add(k);
+  });
+  pod.add(hull, rimMesh, lining, pads, bedGlow, reveal, hinges, dome);
+  const TILT = 0.31;
+  pod.rotation.z = TILT;
+  pod.position.set(-1.0, 0.96, 0);
+  scene.add(pod);
+  pod.updateMatrixWorld(true);
+
+  // ---------- wire stand ----------
+  const W = v => pod.localToWorld(v.clone());
+  const attachFront = [W(new THREE.Vector3(0.7, -0.66, -0.28)), W(new THREE.Vector3(0.7, -0.66, 0.28))];
+  const attachRear = [W(new THREE.Vector3(1.66, -0.56, -0.3)), W(new THREE.Vector3(1.66, -0.56, 0.3))];
+  const fy = 0.012;
+  const standPts = [
+    new THREE.Vector3(-0.55, fy, -0.72), new THREE.Vector3(1.25, fy, -0.72),
+    new THREE.Vector3(1.25, fy, 0.72), new THREE.Vector3(-0.55, fy, 0.72),
+    attachFront[0], attachFront[1], attachRear[0], attachRear[1]
+  ];
+  const standEdges = [
+    [0, 1], [1, 2], [2, 3], [3, 0],         // floor rectangle
+    [0, 4], [3, 5], [4, 5],                 // front A-frame
+    [1, 6], [2, 7], [6, 7],                 // rear A-frame
+    [0, 6], [3, 7],                         // long diagonals
+    [4, 6], [5, 7]                          // spine under the hull
+  ];
+  scene.add(wireFrame(standPts, standEdges, 0.016, chromeMat));
+
+  // ---------- ottoman ----------
+  const ott = new THREE.Group();
+  const cw = 0.56, cd = 0.6, ch = 0.11;
+  const cs = new THREE.Shape();
+  const rr = 0.05;
+  cs.moveTo(-cw / 2 + rr, -cd / 2);
+  cs.lineTo(cw / 2 - rr, -cd / 2); cs.quadraticCurveTo(cw / 2, -cd / 2, cw / 2, -cd / 2 + rr);
+  cs.lineTo(cw / 2, cd / 2 - rr); cs.quadraticCurveTo(cw / 2, cd / 2, cw / 2 - rr, cd / 2);
+  cs.lineTo(-cw / 2 + rr, cd / 2); cs.quadraticCurveTo(-cw / 2, cd / 2, -cw / 2, cd / 2 - rr);
+  cs.lineTo(-cw / 2, -cd / 2 + rr); cs.quadraticCurveTo(-cw / 2, -cd / 2, -cw / 2 + rr, -cd / 2);
+  const cushGeo = new THREE.ExtrudeGeometry(cs, { depth: ch - 0.04, bevelEnabled: true, bevelThickness: 0.025, bevelSize: 0.022, bevelSegments: 5 });
+  cushGeo.rotateX(-Math.PI / 2);
+  const ottCushion = new THREE.Mesh(cushGeo, velvetMat);
+  ottCushion.castShadow = true;
+  const ottTray = new THREE.Mesh(new THREE.BoxGeometry(cw + 0.02, 0.02, cd + 0.02), chromeMat);
+  ottTray.position.y = -0.03;
+  ottCushion.position.y = -0.005;
+  const seatTop = new THREE.Group();
+  seatTop.add(ottTray, ottCushion);
+  seatTop.position.y = 0.5;
+  seatTop.rotation.z = -0.1;
+  ott.add(seatTop);
+  ott.updateMatrixWorld(true);
+  const sT = v => seatTop.localToWorld(v.clone()).sub(ott.position);
+  const ottPts = [
+    sT(new THREE.Vector3(-cw / 2, -0.04, -cd / 2)), sT(new THREE.Vector3(cw / 2, -0.04, -cd / 2)),
+    sT(new THREE.Vector3(cw / 2, -0.04, cd / 2)), sT(new THREE.Vector3(-cw / 2, -0.04, cd / 2)),
+    new THREE.Vector3(-0.14, fy, -0.36), new THREE.Vector3(0.14, fy, -0.36),
+    new THREE.Vector3(0.14, fy, 0.36), new THREE.Vector3(-0.14, fy, 0.36)
+  ];
+  const ottEdges = [
+    [0, 4], [1, 5], [2, 6], [3, 7],          // splayed legs
+    [0, 5], [3, 6],                          // diagonal triangle bracing
+    [4, 5], [5, 6], [6, 7], [7, 4]           // floor rectangle
+  ];
+  ott.add(wireFrame(ottPts, ottEdges, 0.013, chromeMat));
+  ott.position.set(-2.0, 0, 0);
+  scene.add(ott);
+
+  // ---------- floor ----------
+  const shadowFloor = new THREE.Mesh(new THREE.PlaneGeometry(14, 14), new THREE.ShadowMaterial({ opacity: 0.18 }));
+  shadowFloor.rotation.x = -Math.PI / 2;
+  shadowFloor.receiveShadow = true;
+  scene.add(shadowFloor);
+
+  const poolTex = radialTexture([[0, 'rgba(255,255,255,0.75)'], [0.35, 'rgba(255,255,255,0.25)'], [1, 'rgba(255,255,255,0)']]);
+  const poolMat = new THREE.MeshBasicMaterial({ map: poolTex, color: 0x8a4dff, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, opacity: 0.55 });
+  const pool = new THREE.Mesh(new THREE.PlaneGeometry(5.6, 4.4), poolMat);
+  pool.rotation.x = -Math.PI / 2;
+  pool.position.set(-0.1, 0.004, 0);
+  scene.add(pool);
+
+  const contactTex = radialTexture([[0, 'rgba(20,10,40,0.45)'], [1, 'rgba(20,10,40,0)']]);
+  const contact = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 1.8), new THREE.MeshBasicMaterial({ map: contactTex, transparent: true, depthWrite: false }));
+  contact.rotation.x = -Math.PI / 2;
+  contact.position.set(0.1, 0.003, 0);
+  scene.add(contact);
+
+  // floating motes inside the light, very subtle
+  const moteCount = 70;
+  const moteGeo = new THREE.BufferGeometry();
+  const mp = new Float32Array(moteCount * 3);
+  const moteSeed = [];
+  for (let i = 0; i < moteCount; i++) {
+    moteSeed.push([Math.random() * 2.2 - 0.9, Math.random() * 1.6 + 0.9, Math.random() * 1.4 - 0.7, Math.random() * 6.28]);
+  }
+  moteGeo.setAttribute('position', new THREE.BufferAttribute(mp, 3));
+  const moteMat = new THREE.PointsMaterial({ size: 0.022, color: 0xd9c8ff, transparent: true, opacity: 0.7, blending: THREE.AdditiveBlending, depthWrite: false });
+  const motes = new THREE.Points(moteGeo, moteMat);
+  scene.add(motes);
+  scene.add(halo);
+
+  // volumetric light shaft pouring from the open canopy onto the cushions
+  const shaftMat = new THREE.ShaderMaterial({
+    uniforms: { uColor: { value: new THREE.Color(START_COLOR) }, uOpacity: { value: 0 }, uTime: { value: 0 } },
+    vertexShader: `
+      varying vec2 vUv; varying vec3 vN; varying vec3 vV;
+      void main(){
+        vUv = uv;
+        vec4 mv = modelViewMatrix * vec4(position, 1.0);
+        vN = normalize(normalMatrix * normal); vV = normalize(-mv.xyz);
+        gl_Position = projectionMatrix * mv;
+      }`,
+    fragmentShader: `
+      uniform vec3 uColor; uniform float uOpacity; uniform float uTime;
+      varying vec2 vUv; varying vec3 vN; varying vec3 vV;
+      void main(){
+        float facing = pow(abs(dot(vN, vV)), 1.6);              // soft, volume-like edges
+        float along = smoothstep(0.0, 0.35, vUv.y) * smoothstep(1.0, 0.75, vUv.y);
+        float rays = 0.72 + 0.28 * sin(vUv.x * 62.0 + uTime * 0.35) * sin(vUv.x * 23.0 - uTime * 0.22);
+        float a = facing * along * rays * uOpacity;
+        gl_FragColor = vec4(uColor * a, a);
+      }`,
+    transparent: true, blending: THREE.AdditiveBlending, depthWrite: false, side: THREE.DoubleSide
+  });
+  const shaftLen = 1.15;
+  const shaft = new THREE.Mesh(new THREE.CylinderGeometry(R * 0.9, R * 1.05, shaftLen, 64, 1, true), shaftMat);
+  shaft.position.y = -shaftLen / 2 - 0.05;
+  domeBody.add(shaft);
+
+  // ---------- state ----------
+  const OPEN = -1.0;
+  dome.rotation.z = OPEN;                   // canopy open, as on the start screen photo
+
+  // ---------- theme ----------
+  hemi.intensity = isDark() ? 0.35 : 0.65;
+  key.intensity = isDark() ? 0.85 : 1.5;
+  shadowFloor.material.opacity = isDark() ? 0.32 : 0.16;
+  renderer.toneMappingExposure = isDark() ? 0.82 : 0.95;
+
+  // ---------- resize ----------
+  function resize() {
+    const w = stage.clientWidth || 1, h = stage.clientHeight || 1;
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h;
+    camera.fov = w / h < 0.8 ? 46 : 32;     // pull back on tall/narrow boxes so the whole dome fits
+    camera.updateProjectionMatrix();
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  // ---------- loop ----------
+  const tmp = new THREE.Vector3();
+  const c = new THREE.Color();
+  const clock = new THREE.Clock();
+  function tick() {
+    const dt = Math.min(clock.getDelta(), 0.05);
+    const t = clock.elapsedTime;
+    const breath = reduceMotion ? 1 : 0.92 + 0.08 * Math.sin(t * 0.8);
+
+    freq.color.lerp(freq.target, 1 - Math.pow(0.02, dt));
+    const col = freq.color;
+    domeLight.color.copy(col);
+    domeInnerMat.emissive.copy(col);
+    c.copy(col).lerp(new THREE.Color(1, 1, 1), 0.12);
+    ledMat.color.copy(col).multiplyScalar(1.15 * breath);
+    auraMat.uniforms.uColor.value.copy(col);
+    haloMat.color.copy(col);
+    rimGlowMat.color.copy(col);
+    rimGlowMat.opacity = (isDark() ? 0.7 : 0.45) * breath;
+    bedGlowMat.color.copy(col);
+    poolMat.color.copy(col);
+    glowLight.color.copy(col);
+    spill.color.copy(col);
+    domeOuterMat.emissive.copy(col);
+    velvetPadMat.sheenColor.copy(col).lerp(new THREE.Color(1, 1, 1), 0.08);
+    velvetMat.sheenColor.copy(velvetPadMat.sheenColor);
+
+    // canopy is held open
+    domeLight.intensity = 2.1 * breath;
+    domeInnerMat.emissiveIntensity = 1.0 * breath;
+    domeOuterMat.emissiveIntensity = 0.62 * breath;
+    domeOuterMat.opacity = 0.84;
+    auraMat.uniforms.uStrength.value = (isDark() ? 1.0 : 0.45) * breath;
+    poolMat.opacity = Math.min(1, (isDark() ? 0.85 : 0.45) * breath);
+    spill.intensity = 2.6 * breath;
+    glowLight.intensity = 1.2 * breath;
+
+    // keep lights anchored to the moving parts
+    domeBody.getWorldPosition(tmp);
+    halo.position.copy(tmp).add(new THREE.Vector3(-0.15, -0.15, 0));
+    bedGlowMat.opacity = (isDark() ? 0.28 : 0.16) * breath;
+    halo.material.opacity = (isDark() ? 0.6 : 0.3) * 0.75 * breath;
+    glowLight.position.copy(W(new THREE.Vector3(0.9, 0.35, 0)));
+    spill.position.copy(W(new THREE.Vector3(1.0, -0.9, 0)));
+
+    // motes drift
+    for (let i = 0; i < moteCount; i++) {
+      const s = moteSeed[i];
+      const drift = reduceMotion ? 0 : t;
+      mp[i * 3] = s[0] + Math.sin(drift * 0.25 + s[3]) * 0.08;
+      mp[i * 3 + 1] = s[1] + ((drift * 0.04 + s[3]) % 1) * 0.5;
+      mp[i * 3 + 2] = s[2] + Math.cos(drift * 0.2 + s[3]) * 0.08;
+    }
+    moteGeo.attributes.position.needsUpdate = true;
+    moteMat.color.copy(c);
+    moteMat.opacity = isDark() ? 0.35 : 0.15;
+
+    // presentation: ease into a slow turntable spin with a gentle camera drift
+    presentSpeed += ((presenting && !reduceMotion ? 0.55 : 0) - presentSpeed) * (1 - Math.pow(0.15, dt));
+    controls.autoRotateSpeed = presentSpeed;
+    if (presenting && !reduceMotion) {
+      const off = camera.position.clone().sub(controls.target);
+      const sph = new THREE.Spherical().setFromVector3(off);
+      const pk = 1 - Math.pow(0.5, dt);
+      sph.phi += ((1.22 + 0.1 * Math.sin(t * 0.13)) - sph.phi) * pk * 0.4;
+      sph.radius += ((8.2 + 0.7 * Math.sin(t * 0.09)) - sph.radius) * pk * 0.4;
+      camera.position.setFromSpherical(sph).add(controls.target);
+    }
+
+    shaftMat.uniforms.uColor.value.copy(col);
+    shaftMat.uniforms.uTime.value = t;
+    shaftMat.uniforms.uOpacity.value = (isDark() ? 0.55 : 0.3) * breath;
+
+    controls.update();
+    renderer.render(scene, camera);
+  }
+
+  // only render while on screen and the tab is visible (saves battery and memory on phones)
+  let visible = true, running = false;
+  function loop() {
+    if (!visible || document.hidden) { running = false; return; }
+    tick();
+    requestAnimationFrame(loop);
+  }
+  function wake() { if (!running && visible && !document.hidden) { running = true; clock.getDelta(); requestAnimationFrame(loop); } }
+  new IntersectionObserver(([e]) => { visible = e.isIntersecting; wake(); }).observe(stage);
+  document.addEventListener('visibilitychange', wake);
+  wake();
+})();
+</script>
+</body>
+</html>
