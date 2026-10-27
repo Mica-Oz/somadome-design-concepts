@@ -12,8 +12,8 @@
   if(customElements.get('soma-clouds'))return;
 
   const PALETTES={
-    dusk:{ground:'#5B3A9E',deep:'#2E1A66',glow:'#C2549E',cloud:'#F07C74',hi:'#FFB89E'},
-    dawn:{ground:'#E6DCF8',deep:'#C9B6EE',glow:'#EFB0D8',cloud:'#FFC4AE',hi:'#FFF4EE'}
+    dusk:{ground:'#5B3A9E',deep:'#2E1A66',glow:'#D8629F',cloud:'#F28078',hi:'#FFC2A6'},
+    dawn:{ground:'#E6DCF8',deep:'#C9B6EE',glow:'#F2A6D2',cloud:'#FFC4AE',hi:'#FFF6F0'}
   };
   const hex=h=>{const n=parseInt(h.slice(1),16);return[(n>>16)/255,(n>>8&255)/255,(n&255)/255]};
   const cssFallback=p=>`radial-gradient(60% 45% at 50% 22%,${p.cloud}cc,transparent 70%),radial-gradient(40% 35% at 8% 10%,${p.cloud}aa,transparent 70%),radial-gradient(40% 35% at 92% 10%,${p.cloud}aa,transparent 70%),radial-gradient(70% 40% at 50% 70%,${p.glow}88,transparent 75%),linear-gradient(180deg,${p.ground},${p.deep})`;
@@ -27,23 +27,35 @@ float noise(vec2 p){vec2 i=floor(p),f=fract(p);vec2 u=f*f*(3.-2.*f);
   return mix(mix(hash(i),hash(i+vec2(1.,0.)),u.x),mix(hash(i+vec2(0.,1.)),hash(i+vec2(1.,1.)),u.x),u.y);}
 float fbm(vec2 p){float v=0.,a=.5;mat2 m=mat2(1.6,1.2,-1.2,1.6);
   for(int i=0;i<4;i++){v+=a*noise(p);p=m*p;a*=.5;}return v;}
+// billowy noise: rounded puffs instead of streaks
+float billow(vec2 p){float v=0.,a=.5;mat2 m=mat2(1.6,1.2,-1.2,1.6);
+  for(int i=0;i<4;i++){v+=a*abs(noise(p)*2.-1.);p=m*p;a*=.5;}return v;}
+// cloud density: a soft low-frequency shape for the masses, billowy detail on the edges
+float dens(vec2 q,float t){
+  vec2 w=vec2(fbm(q*.55+vec2(t*.020,0.)),fbm(q*.55+vec2(3.1,-t*.015)));
+  float shape=fbm(q*.85+.4*w+vec2(-t*.032,t*.006));
+  float puff=billow(q*2.2+vec2(-t*.045,t*.018));
+  return shape+.22*(puff-.45);
+}
 void main(){
   vec2 uv=gl_FragCoord.xy/uRes;float aspect=uRes.x/uRes.y;
   vec2 p=vec2((uv.x-.5)*aspect,uv.y-.5);
   if(uMirror>.5)p.x=abs(p.x);
   float t=uTime;
-  // aurora-style undulation: slow waves travelling sideways through the cloud banks
-  p.y+=.06*sin(p.x*1.9+t*.31)+.03*sin(p.x*3.7-t*.23);
-  // stretch horizontally so clouds form soft banks, like the reference artwork
-  vec2 q=vec2(p.x*1.25,p.y*2.5);
-  vec2 w=vec2(fbm(q+vec2(t*.028,-t*.012)),fbm(q+vec2(5.2,1.3)-t*.020));
-  float f=fbm(q*1.1+1.25*w+vec2(-t*.035,t*.010));
-  float d=f+.08*sin(p.y*4.6+w.x*2.2)+.16*(w.y-.5)+.02;
-  float c=smoothstep(.46,.74,d);
-  vec3 col=mix(uDeep,uGround,clamp(.35+.65*uv.y+.4*(f-.5),0.,1.));
-  col=mix(col,uGlow,smoothstep(.32,.60,d)*.55);
-  col=mix(col,uCloud,c*.92);
-  col=mix(col,uHi,smoothstep(.70,.86,d)*.45);
+  // aurora-style undulation: slow waves travelling sideways through the clouds
+  p.y+=.05*sin(p.x*1.9+t*.31)+.025*sin(p.x*3.7-t*.23);
+  vec2 q=vec2(p.x*1.7,p.y*2.3);
+  float d=dens(q,t);
+  // light from above: where density falls off upward we're on a sunlit top, where it rises we're underneath
+  float up=dens(q+vec2(0.,.16),t);
+  float lit=clamp(.45+(d-up)*4.,0.,1.);
+  float c=smoothstep(.50,.65,d);
+  vec3 col=mix(uDeep,uGround,clamp(.30+.75*uv.y,0.,1.));
+  // pink haze around and between the clouds, the mid tone of the original artwork
+  col=mix(col,uGlow,smoothstep(.32,.54,d)*.75);
+  vec3 cloud=mix(mix(uGlow,uCloud,.25),uCloud,lit);
+  col=mix(col,cloud,c);
+  col=mix(col,uHi,c*smoothstep(.6,1.,lit)*.7);
   gl_FragColor=vec4(col,1.);
 }`;
 
