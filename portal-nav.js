@@ -3,17 +3,10 @@
 //
 //   <script src="portal-nav.js"></script>                  adds html.in-portal so the page can show its own link
 //   <script src="portal-nav.js" data-float></script>       also adds a floating link, top left
-//   <script src="portal-nav.js" data-float data-theme></script>   and applies the portal's light/dark choice
 (function () {
   if (!location.pathname.startsWith('/redesign/') || window.top !== window) return;
   var script = document.currentScript, root = document.documentElement;
   root.classList.add('in-portal');
-
-  if (script && script.hasAttribute('data-theme')) {
-    var theme = 'light';
-    try { if (localStorage.getItem('somadome-theme') === 'dark') theme = 'dark'; } catch (e) {}
-    root.setAttribute('data-theme', theme);
-  }
 
   if (script && script.hasAttribute('data-float')) {
     var add = function () {
