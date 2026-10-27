@@ -8,6 +8,11 @@
   var script = document.currentScript, root = document.documentElement;
   root.classList.add('in-portal');
 
+  // the portal's glass-mark loader (the heavy redesign and 3D pages are where it helps most)
+  var loader = document.createElement('script');
+  loader.src = '/brand/loader.js';
+  (document.head || root).appendChild(loader);
+
   if (script && script.hasAttribute('data-float')) {
     var add = function () {
       var a = document.createElement('a');
