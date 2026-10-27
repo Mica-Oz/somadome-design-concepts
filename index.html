@@ -28,7 +28,7 @@
     <div style="display:flex;align-items:center;gap:8px"><span style="font-size:11px;letter-spacing:.12em;color:#A9AEC2">view</span>
       <sc-for list="{{ modeOpts }}" as="o" hint-placeholder-count="2"><button onClick="{{ o.pick }}" style="height:34px;padding:0 14px;background:{{ o.bg }};border:1px solid {{ o.bd }};color:{{ o.fg }};font-family:'Poppins',sans-serif;font-size:13px;cursor:pointer">{{ o.label }}</button></sc-for>
     </div>
-    <sc-if value="{{ isR2 }}" hint-placeholder-val="{{ true }}">
+    <sc-if value="{{ showDomeToggle }}" hint-placeholder-val="{{ true }}">
       <div style="display:flex;align-items:center;gap:8px"><span style="font-size:11px;letter-spacing:.12em;color:#A9AEC2">start dome</span>
         <sc-for list="{{ domeOpts }}" as="o" hint-placeholder-count="2"><button onClick="{{ o.pick }}" style="height:34px;padding:0 14px;background:{{ o.bg }};border:1px solid {{ o.bd }};color:{{ o.fg }};font-family:'Poppins',sans-serif;font-size:13px;cursor:pointer">{{ o.label }}</button></sc-for>
       </div>
@@ -39,6 +39,10 @@
   </div>
 
   <div style="display:flex;flex-wrap:{{ chipWrap }};overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;gap:8px;padding:16px {{ padX }}px 0;align-items:center">
+    <span style="font-size:11px;letter-spacing:.12em;color:#F7B3A8;margin-right:8px;flex:none;white-space:nowrap">final design</span>
+    <sc-for list="{{ finalChips }}" as="o" hint-placeholder-count="1"><button onClick="{{ o.pick }}" style="height:36px;padding:0 14px;display:flex;align-items:center;gap:10px;background:{{ o.bg }};border:1px solid {{ o.bd }};color:{{ o.fg }};font-family:'Poppins',sans-serif;font-size:13px;cursor:pointer;flex:none;white-space:nowrap"><span style="width:14px;height:14px;border-radius:9999px;background:{{ o.swatch }};flex:none"></span>{{ o.label }}</button></sc-for>
+  </div>
+  <div style="display:flex;flex-wrap:{{ chipWrap }};overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;gap:8px;padding:10px {{ padX }}px 0;align-items:center">
     <span style="font-size:11px;letter-spacing:.12em;color:#A9AEC2;margin-right:8px;flex:none;white-space:nowrap">proposed option</span>
     <sc-for list="{{ optionChips }}" as="o" hint-placeholder-count="7"><button onClick="{{ o.pick }}" style="height:36px;padding:0 14px;display:flex;align-items:center;gap:10px;background:{{ o.bg }};border:1px solid {{ o.bd }};color:{{ o.fg }};font-family:'Poppins',sans-serif;font-size:13px;cursor:pointer;flex:none;white-space:nowrap"><span style="width:14px;height:14px;border-radius:9999px;background:{{ o.swatch }};flex:none"></span>{{ o.label }}</button></sc-for>
     <sc-if value="{{ isGlassable }}" hint-placeholder-val="{{ false }}">
@@ -69,13 +73,13 @@
       </div>
       <div style="display:flex;flex-direction:column;gap:10px;min-width:0">
         <div style="display:flex;align-items:baseline;gap:12px"><span style="font-size:11px;letter-spacing:.12em;color:#5FD3E6">proposed</span><span style="color:#fff">{{ optionLabel }}</span><span style="color:#5A6180">{{ optionRound }}clickable</span></div>
-        <div data-fit-col="1" style="border:1px solid #252A3D;width:100%;aspect-ratio:{{ aspect }};position:relative;overflow:hidden"><div style="{{ fitStyle }}"><dc-import name="Tablet Screen" screen="{{ screen }}" version="{{ version }}" theme="{{ theme }}" bg="{{ bg }}" surface="{{ surface }}" cloud-landing="{{ cloudLanding }}" session-wash="{{ sessionWash }}" dome3d="{{ dome3d }}" orientation="{{ orientation }}" scale="{{ 1 }}" on-navigate="{{ nav }}" hint-size="100%,100%"></dc-import></div></div>
+        <div data-fit-col="1" style="border:1px solid #252A3D;width:100%;aspect-ratio:{{ aspect }};position:relative;overflow:hidden"><div style="{{ fitStyle }}"><dc-import name="Tablet Screen" screen="{{ screen }}" version="{{ version }}" theme="{{ theme }}" bg="{{ bg }}" surface="{{ surface }}" cloud-landing="{{ cloudLanding }}" session-wash="{{ sessionWash }}" player-bg="{{ playerBg }}" dome3d="{{ dome3d }}" orientation="{{ orientation }}" scale="{{ 1 }}" on-navigate="{{ nav }}" hint-size="100%,100%"></dc-import></div></div>
       </div>
     </div>
     <div style="display:flex;gap:10px;padding:0 {{ padX }}px 40px;overflow-x:auto;-webkit-overflow-scrolling:touch">
       <sc-for list="{{ thumbs }}" as="t" hint-placeholder-count="16">
         <button onClick="{{ t.pick }}" style="flex:none;display:flex;flex-direction:column;gap:6px;padding:6px;background:transparent;border:1px solid {{ t.bd }};cursor:pointer;color:{{ t.fg }};font-family:'Poppins',sans-serif;font-size:11px;text-align:left">
-          <div style="position:relative;width:{{ thumbW }}px;height:{{ thumbH }}px;overflow:hidden;background:#0B0E1A"><div style="{{ thumbFit }}"><dc-import name="Tablet Screen" screen="{{ t.id }}" lite="{{ true }}" version="{{ version }}" theme="{{ theme }}" bg="{{ bg }}" surface="{{ surface }}" cloud-landing="{{ cloudLanding }}" session-wash="{{ sessionWash }}" dome3d="{{ dome3d }}" orientation="{{ orientation }}" scale="{{ 1 }}" hint-size="100%,100%"></dc-import></div></div>
+          <div style="position:relative;width:{{ thumbW }}px;height:{{ thumbH }}px;overflow:hidden;background:#0B0E1A"><div style="{{ thumbFit }}"><dc-import name="Tablet Screen" screen="{{ t.id }}" lite="{{ true }}" version="{{ version }}" theme="{{ theme }}" bg="{{ bg }}" surface="{{ surface }}" cloud-landing="{{ cloudLanding }}" session-wash="{{ sessionWash }}" player-bg="{{ playerBg }}" dome3d="{{ dome3d }}" orientation="{{ orientation }}" scale="{{ 1 }}" hint-size="100%,100%"></dc-import></div></div>
           <span>{{ t.label }}</span>
         </button>
       </sc-for>
@@ -89,7 +93,7 @@
           <div style="font-family:'Oswald',sans-serif;font-weight:300;font-size:28px;line-height:1.1;color:#fff">{{ r.label }}</div>
           <div style="display:grid;grid-template-columns:{{ gridCols }};justify-content:center;gap:{{ gridGap }}px;align-items:start">
             <div style="display:flex;flex-direction:column;gap:8px;min-width:0"><span style="font-size:11px;letter-spacing:.12em;color:#A9AEC2">current app</span><div data-cur-col="1" style="border:1px solid #252A3D;width:100%;aspect-ratio:{{ aspectCur }};position:relative;overflow:hidden"><div style="{{ fitStyleCur }}"><dc-import name="Tablet Screen" screen="{{ r.id }}" version="0" orientation="portrait" scale="{{ 1 }}" hint-size="100%,100%"></dc-import></div></div></div>
-            <div style="display:flex;flex-direction:column;gap:8px;min-width:0"><span style="font-size:11px;letter-spacing:.12em;color:#5FD3E6">proposed · {{ optionLabel }}</span><div data-fit-col="1" style="border:1px solid #252A3D;width:100%;aspect-ratio:{{ aspect }};position:relative;overflow:hidden"><div style="{{ fitStyle }}"><dc-import name="Tablet Screen" screen="{{ r.id }}" version="{{ version }}" theme="{{ theme }}" bg="{{ bg }}" surface="{{ surface }}" cloud-landing="{{ cloudLanding }}" session-wash="{{ sessionWash }}" dome3d="{{ dome3d }}" orientation="{{ orientation }}" scale="{{ 1 }}" hint-size="100%,100%"></dc-import></div></div></div>
+            <div style="display:flex;flex-direction:column;gap:8px;min-width:0"><span style="font-size:11px;letter-spacing:.12em;color:#5FD3E6">proposed · {{ optionLabel }}</span><div data-fit-col="1" style="border:1px solid #252A3D;width:100%;aspect-ratio:{{ aspect }};position:relative;overflow:hidden"><div style="{{ fitStyle }}"><dc-import name="Tablet Screen" screen="{{ r.id }}" version="{{ version }}" theme="{{ theme }}" bg="{{ bg }}" surface="{{ surface }}" cloud-landing="{{ cloudLanding }}" session-wash="{{ sessionWash }}" player-bg="{{ playerBg }}" dome3d="{{ dome3d }}" orientation="{{ orientation }}" scale="{{ 1 }}" hint-size="100%,100%"></dc-import></div></div></div>
           </div>
         </div>
       </sc-for>
@@ -97,8 +101,10 @@
   </sc-if>
 </div>
 </x-dc>
-<script type="text/x-dc" data-dc-script data-props="{&quot;option&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;cloud&quot;,&quot;options&quot;:[&quot;cloud&quot;,&quot;aurora&quot;,&quot;teal&quot;,&quot;sweep&quot;,&quot;violet&quot;,&quot;glow2&quot;,&quot;particles&quot;],&quot;tsType&quot;:&quot;string&quot;}}">
+<script type="text/x-dc" data-dc-script data-props="{&quot;option&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;final&quot;,&quot;options&quot;:[&quot;final&quot;,&quot;cloud&quot;,&quot;aurora&quot;,&quot;teal&quot;,&quot;sweep&quot;,&quot;violet&quot;,&quot;glow2&quot;,&quot;particles&quot;],&quot;tsType&quot;:&quot;string&quot;}}">
 const SCREENS=[['splash','Splash'],['start','Start'],['signin','Sign in'],['selectdome','Select dome'],['bluetooth','Bluetooth'],['pairing','Pairing'],['choose','Select vs suggest'],['intention','Intention'],['sessions','Session menu'],['feel','Helper · feel'],['type','Helper · type'],['mantra','Helper · mantra'],['startsession','Start session'],['player','Player'],['feedback','Feedback'],['booking','Booking'],['download','Download app']];
+const FINAL=[
+ {id:'final',label:'Final · clouds + glass',theme:'final',bg:'clouds',surface:'translucent',playerBg:'particles',swatch:'linear-gradient(135deg,#5B3A9E 30%,#F07C74)',note:'The chosen direction. Our own clouds on every screen, softly undulating and drifting like Aurora, with frosted glass cards. The session player switches to the particle curtain, tinted by the session. The 3D dome model is used throughout.'}];
 const OPTIONS=[
  {id:'cloud',label:'Clouds everywhere',theme:'cloud',bg:'cloud',surface:'translucent',swatch:'linear-gradient(135deg,#7A4FB0,#F0907A)',note:'The current cloud artwork kept on every screen, tinted and slowed, with the new type, spacing and components on top.'},
  {id:'aurora',label:'Aurora',theme:'glow',bg:'aurora',surface:'translucent',swatch:'linear-gradient(180deg,#5FD3E6,#2A1A5E,#EE3D96)',note:'Tall drifting ribbons of light instead of orbs. Frosted cards.'},
@@ -112,14 +118,15 @@ const ROUND1=[
  {id:'r1D',version:'D',label:'D · Glow',swatch:'linear-gradient(135deg,#140C33,#EE3D96)',note:'Round 1. Rounded cards, a light bloom on every screen and glowing selections.'},
  {id:'r1E',version:'E',label:'E · Glow v2',swatch:'linear-gradient(135deg,#140C33,#5FD3E6)',note:'Round 1. Glow with slowly turning conic light behind the cards.'}];
 class Component extends DCLogic {
-  state={vw:window.innerWidth,vh:window.innerHeight,mode:'step',orientation:'landscape',screen:'splash',option:this.props.option||'cloud',r1theme:'dark',dome:'3d',glass:'off'};
+  state={vw:window.innerWidth,vh:window.innerHeight,mode:'step',orientation:'landscape',screen:'splash',option:this.props.option||'final',r1theme:'dark',dome:'3d',glass:'off'};
   seg(key,opts){return opts.map(([id,label])=>{const on=this.state[key]===id;return{id,label,pick:()=>this.setState({[key]:id}),bg:on?'#fff':'transparent',bd:on?'#fff':'#3A4160',fg:on?'#0B0E1A':'#D8DAE3'}})}
   componentDidMount(){this._ro=new ResizeObserver(()=>{const vw=window.innerWidth,vh=window.innerHeight;if(vw!==this.state.vw||vh!==this.state.vh)this.setState({vw,vh});});this._ro.observe(document.body);}
   componentWillUnmount(){this._ro&&this._ro.disconnect();}
   renderVals(){
     const S=this.state,land=S.orientation==='landscape',W=land?1340:800,H=land?800:1340;
     const r1=ROUND1.find(o=>o.id===S.option);
-    const base=OPTIONS.find(o=>o.id===S.option)||OPTIONS[0];
+    const fin=FINAL.find(o=>o.id===S.option);
+    const base=fin||OPTIONS.find(o=>o.id===S.option)||OPTIONS[0];
     const opt=r1?Object.assign({},r1,{theme:S.r1theme,bg:null,surface:null}):base.glassable?Object.assign({},base,{surface:S.glass==='on'?'translucent':'hairline',label:base.label+(S.glass==='on'?' · glass':'')}):base;
     const chipOf=o=>{const on=o.id===S.option;return{label:o.label,swatch:o.swatch,pick:()=>this.setState({option:o.id}),bg:on?'#171C36':'transparent',bd:on?'#5FD3E6':'#3A4160',fg:'#fff'}};
     const idx=SCREENS.findIndex(s=>s[0]===S.screen);
@@ -132,8 +139,8 @@ class Component extends DCLogic {
     if(mob){propW=curW=Math.max(200,Math.floor((S.vw||375)-padX*2-2));}
     const thumbW=land?168:100,thumbH=land?100:168;
     return {modeOpts:this.seg('mode',[['step','Step through'],['scroll','Scroll']]),orientOpts:this.seg('orientation',[['landscape','Landscape'],['portrait','Portrait']]),
-      optionChips:OPTIONS.map(chipOf),r1Chips:ROUND1.map(chipOf),isR1:!!r1,isGlassable:!r1&&!!base.glassable,glassOpts:this.seg('glass',[['off','Hairline'],['on','Glass']]),isR2:!r1,domeOpts:this.seg('dome',[['photo','Photo'],['3d','3D']]),dome3d:!r1&&S.dome==='3d',r1ThemeOpts:this.seg('r1theme',[['dark','Dark'],['white','White'],['lavender','Lavender']]),
-      optionLabel:opt.label,optionNote:opt.note,theme:opt.theme,bg:opt.bg,surface:opt.surface,cloudLanding:!r1&&opt.bg!=='cloud',version:opt.version||'D',sessionWash:!r1,optionRound:r1?'round 1 · ':'',
+      finalChips:FINAL.map(chipOf),optionChips:OPTIONS.map(chipOf),r1Chips:ROUND1.map(chipOf),isR1:!!r1,isGlassable:!r1&&!!base.glassable,glassOpts:this.seg('glass',[['off','Hairline'],['on','Glass']]),isR2:!r1,showDomeToggle:!r1&&!fin,domeOpts:this.seg('dome',[['photo','Photo'],['3d','3D']]),dome3d:!!fin||(!r1&&S.dome==='3d'),r1ThemeOpts:this.seg('r1theme',[['dark','Dark'],['white','White'],['lavender','Lavender']]),
+      optionLabel:opt.label,optionNote:opt.note,theme:opt.theme,bg:opt.bg,surface:opt.surface,cloudLanding:!r1&&!fin&&opt.bg!=='cloud',playerBg:(fin&&fin.playerBg)||'',version:opt.version||'D',sessionWash:!r1,optionRound:r1?'round 1 · ':'',
       isStep:S.mode==='step',isScroll:S.mode==='scroll',orientation:S.orientation,screen:S.screen,screenLabel:SCREENS[idx][1],stepNum:idx+1,stepTotal:SCREENS.length,
       prev:()=>go(idx-1),next:()=>go(idx+1),nav:id=>this.setState({screen:id}),
       aspect:`${W} / ${H}`,fitStyle:Object.assign({},fitStyle,{transform:`scale(${propW/W})`}),aspectCur:'800 / 1340',fitStyleCur:{position:'absolute',left:0,top:0,width:800,height:1340,transformOrigin:'top left',transform:`scale(${curW/800})`},gridCols:mob?`${propW}px`:`${curW}px ${propW}px`,gridGap:mob?20:32,padX,headPos:mob?'relative':'sticky',headGap:mob?'12px 16px':'16px 28px',titleSize:mob?17:20,spacerDisp:mob?'none':'block',chipWrap:mob?'nowrap':'wrap',stepGap:mob?12:24,stepLabelW:mob?'0':'260px',stepLabelFlex:mob?'1':'none',
