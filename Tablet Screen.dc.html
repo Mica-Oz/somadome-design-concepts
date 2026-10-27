@@ -65,6 +65,10 @@
     <x-import component-from-global-scope="soma-particles" count="{{ pCount }}" hues="{{ pHues }}" lightness="{{ pLight }}" hint-size="100%,100%" style="position:absolute;inset:0;pointer-events:none"></x-import>
     <div style="position:absolute;inset:0;background:var(--pScrim);pointer-events:none"></div>
   </sc-if>
+  <sc-if value="{{ showParticlesLite }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;left:0;right:0;top:22%;height:56%;background:radial-gradient(circle,var(--sess) 1.6px,transparent 2.4px) 0 0/14px 14px;-webkit-mask:radial-gradient(70% 50% at 50% 50%,#000 30%,transparent 100%);mask:radial-gradient(70% 50% at 50% 50%,#000 30%,transparent 100%);opacity:.9;pointer-events:none"></div>
+    <div style="position:absolute;inset:0;background:var(--pScrim);pointer-events:none"></div>
+  </sc-if>
   <sc-if value="{{ showCloud }}" hint-placeholder-val="{{ false }}">
     <div style="position:absolute;inset:0;background-image:url(assets/clouds.png);background-size:cover;background-position:center;animation:smCloud 60s cubic-bezier(.22,.61,.36,1) infinite alternate;pointer-events:none"></div>
     <div style="position:absolute;inset:0;background:var(--cloudTint);pointer-events:none"></div>
@@ -469,7 +473,7 @@ class Component extends DCLogic {
     let showBloom=v.bloom&&!v.bloom2&&(v.bloomAll||bloomScreens.includes(screen))&&!showPhoto;let showBloom2=!!v.bloom2&&!showPhoto&&!cur;let showAurora=false,showParticles=false,showCloud=false,showClouds=false;
     if(bgp){showBloom=bgp==='orbs';showBloom2=bgp==='orbs2';showAurora=bgp==='aurora';showParticles=bgp==='particles';showCloud=bgp==='cloud';showClouds=bgp==='clouds';}
     if(cloudLanding){showCloud=true;showBloom=showBloom2=showAurora=showParticles=showClouds=false;}
-    const lite=!!this.props.lite;if(lite&&showParticles){showParticles=false;showBloom=true;}
+    const lite=!!this.props.lite;let showParticlesLite=false;if(lite&&showParticles){showParticles=false;showParticlesLite=true;}
     const idx=ORDER.indexOf(screen);
     const goNext=()=>this.nav(ORDER[Math.min(idx+1,ORDER.length-1)]);
     const goPrev=()=>this.nav(screen==='sessions'?'intention':ORDER[Math.max(idx-1,0)]);
@@ -482,7 +486,7 @@ class Component extends DCLogic {
     const fbQ=[{text:'How supported did you feel during this session (physically, emotionally, and energetically)?',lo:'Not supported',hi:'Deeply supported'},{text:'How refreshed or recharged do you feel compared to before the session?',lo:'Depleted',hi:'Recharged'},{text:'How aligned did this session feel with what you were hoping to receive today (relaxation, clarity, etc.)?',lo:'Not aligned',hi:'Deeply aligned'}];
     const fbQuestions=fbQ.map((q,qi)=>Object.assign({},q,{opts:[1,2,3,4,5,6,7].map(n=>{const on=S.fb[qi]===n;return{n,pick:()=>this.setState({fb:Object.assign({},S.fb,{[qi]:n})}),bg:on?'var(--guest)':'transparent',bd:on?'var(--guest)':'var(--ctrl)',fg:on?'var(--onGuest)':'var(--t2)',gl:on?'var(--selGlow)':'none',anim:on?'var(--glowAnim)':'none'}})}));
     const op=k=>S[k]===null?.4:1;
-    return Object.assign({screen,frameStyle,wrapStyle,pCount:landing?9000:5500,pHues:th.pHues||'0.52,0.58,0.80',pLight:landing?(th.pLight||'0.5'):'0.38',showBloom:showBloom&&!cur,showBloom2,showAurora,showParticles,showCloud,showClouds,showPhoto,isCurrent:cur,shotSrc:'uploads/shots/'+screen+(land?'-l':'-p')+'.jpg',photoUrl:screen==='player'?'assets/photo-in-place.jpg':'assets/photo-in-the-world.jpg',logoSrc:th.logo,showDome:v.dome,
+    return Object.assign({screen,frameStyle,wrapStyle,pCount:landing?9000:5500,pHues:th.pHues||'0.52,0.58,0.80',pLight:landing?(th.pLight||'0.5'):'0.38',showBloom:showBloom&&!cur,showBloom2,showAurora,showParticles,showParticlesLite,showCloud,showClouds,showPhoto,isCurrent:cur,shotSrc:'uploads/shots/'+screen+(land?'-l':'-p')+'.jpg',photoUrl:screen==='player'?'assets/photo-in-place.jpg':'assets/photo-in-the-world.jpg',logoSrc:th.logo,showDome:v.dome,
       hasTop:!!top,topTitle:top?top.t:'',showClose:!!(top&&top.close),showBack:!!(top&&top.back),showBt:!!(top&&top.bt),
       icoX:ico('x',22),icoBack:ico('back',22),icoBt:ico('bt',22),icoEyeOff:ico('eyeoff',20),icoVol:ico('vol',20),icoStop:ico('stop',22),icoPlayPause:ico(S.playing?'pause':'play',22),
       goNext,goPrev,goSessions:()=>this.nav('intention'),goSessionList:()=>this.nav('sessions'),goStartSession:()=>this.nav('startsession'),
@@ -496,7 +500,7 @@ class Component extends DCLogic {
       toggleFan:()=>this.setState({fan:!S.fan}),fanTrack:S.fan?'var(--sess)':'transparent',fanGlow:S.fan?`0 0 24px ${rgba(chosen.color,.6)}`:'none',fanAnim:'none',skipGlow:S.skip?`0 0 24px ${rgba(chosen.color,.6)}`:'none',skipAnim:'none',fanKnob:S.fan?'28px':'4px',
       toggleSkip:()=>this.setState({skip:!S.skip}),skipTrack:S.skip?'var(--sess)':'transparent',skipKnob:S.skip?'28px':'4px',
       togglePlay:()=>this.setState({playing:!S.playing}),progress:'73%',elapsed:'0:13:55',remaining:'-0:05:08',
-      fbQuestions,showShot:cur&&screen!=='download',noShot:cur&&screen==='download',goHome:()=>this.nav('splash'),liteAttr:lite?'1':'0',showDomeImg:!!v.dome&&!(this.props.dome3d&&!lite),showDome3d:!!v.dome&&!!this.props.dome3d&&!lite,domeSrc:'dome-3d.html?theme='+(['white','lavender'].includes(this.props.theme)?'light':'dark'),chosenName:chosen.name,chosenTag:chosen.tag,chosenTop:chosen.top,chosenMore:chosen.more,chosenKicker:S.sess!==null?'your session':'we recommend',
+      fbQuestions,showShot:cur&&screen!=='download',noShot:cur&&screen==='download',goHome:()=>this.nav('splash'),liteAttr:lite?'1':'0',showDomeImg:!!v.dome&&!(this.props.dome3d&&!lite),showDome3d:!!v.dome&&!!this.props.dome3d&&!lite,domeSrc:'dome-3d-embed.html?theme='+(['white','lavender'].includes(this.props.theme)?'light':'dark'),chosenName:chosen.name,chosenTag:chosen.tag,chosenTop:chosen.top,chosenMore:chosen.more,chosenKicker:S.sess!==null?'your session':'we recommend',
       showWash:!cur&&sessScreen&&(this.props.sessionWash??true),washGlow:rgba(chosen.color,screen==='player'?.55:.4),washGlowAnim:screen==='player'?'smWashIn 1.6s cubic-bezier(.22,.61,.36,1) both,smWashSwell 9s cubic-bezier(.22,.61,.36,1) 1.6s infinite':'smWashIn 1.6s cubic-bezier(.22,.61,.36,1) both'},
       Object.fromEntries(['splash','start','signin','selectdome','bluetooth','pairing','choose','intention','sessions','feel','type','mantra','startsession','player','feedback','booking','download'].map(id=>['is_'+id,!cur&&is(id)])));
   }

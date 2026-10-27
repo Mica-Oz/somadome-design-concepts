@@ -2,19 +2,165 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Somadome 3D</title>
-<!-- Embeddable 3D Somadome on a transparent background. Query params: ?theme=light|dark (default dark), ?color=%23RRGGBB -->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Somadome — 3D model</title>
+<script src="portal-nav.js" data-float data-theme></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
-  html, body { height: 100%; margin: 0; background: transparent; overflow: hidden; }
+  :root {
+    --bg-a: #ECE7F5;
+    --bg-b: #D9D1EC;
+    --ink: #2B2440;
+    --ink-soft: #6C6488;
+    --panel: rgba(255,255,255,0.62);
+    --panel-line: rgba(80,60,140,0.14);
+    --focus: #7B5CFF;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg-a: #2A2052;
+      --bg-b: #100C22;
+      --ink: #F1EDFB;
+      --ink-soft: #ADA3CC;
+      --panel: rgba(30,24,58,0.55);
+      --panel-line: rgba(200,180,255,0.16);
+      --focus: #C9B8FF;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg-a: #2A2052;
+    --bg-b: #100C22;
+    --ink: #F1EDFB;
+    --ink-soft: #ADA3CC;
+    --panel: rgba(30,24,58,0.55);
+    --panel-line: rgba(200,180,255,0.16);
+    --focus: #C9B8FF;
+  }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  html, body { height: 100%; margin: 0; }
+  *, *::before, *::after { box-sizing: inherit; }
+  body {
+    background: radial-gradient(120% 90% at 50% 38%, var(--bg-a) 0%, var(--bg-b) 100%);
+    color: var(--ink);
+    font-family: "Jost", "Futura", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
   #stage { position: fixed; inset: 0; }
-  #stage canvas { display: block; width: 100%; height: 100%; outline: none; }
-  #fallback { display: none; width: 100%; height: 100%; object-fit: contain; }
+  #stage canvas { display: block; width: 100%; height: 100%; outline: none; touch-action: none; }
+
+  .title {
+    position: fixed;
+    top: calc(env(safe-area-inset-top, 0px) + clamp(18px, 4vw, 40px));
+    left: clamp(18px, 4vw, 44px);
+    pointer-events: none;
+    max-width: 34ch;
+  }
+  .title h1 {
+    margin: 0;
+    font-weight: 300;
+    font-size: clamp(30px, 5vw, 54px);
+    letter-spacing: 0.06em;
+    line-height: 1;
+  }
+  html.in-portal .title { top: calc(env(safe-area-inset-top, 0px) + clamp(18px, 4vw, 40px) + 46px); }
+  .title p {
+    margin: 10px 0 0;
+    font-size: 15px;
+    line-height: 1.5;
+    color: var(--ink-soft);
+    font-weight: 400;
+  }
+
+  .dock {
+    position: fixed;
+    left: 50%;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + clamp(14px, 3vw, 30px));
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 10px 12px 10px 18px;
+    border-radius: 999px;
+    background: var(--panel);
+    border: 1px solid var(--panel-line);
+    backdrop-filter: blur(18px) saturate(1.3);
+    -webkit-backdrop-filter: blur(18px) saturate(1.3);
+    max-width: calc(100vw - 24px);
+  }
+  .swatches { display: flex; gap: 8px; align-items: center; }
+  .swatch {
+    width: 22px; height: 22px; border-radius: 50%;
+    border: none; padding: 0; cursor: pointer;
+    background: var(--c);
+    box-shadow: 0 0 0 0 transparent, 0 0 12px -2px var(--c);
+    transition: transform .2s ease, box-shadow .2s ease;
+  }
+  .swatch[aria-pressed="true"] { box-shadow: 0 0 0 2px var(--panel), 0 0 0 3.5px var(--c), 0 0 16px 0 var(--c); }
+  .swatch:hover { transform: scale(1.12); }
+  .sep { width: 1px; height: 24px; background: var(--panel-line); }
+  .btn {
+    font: inherit; font-size: 14px; font-weight: 500; letter-spacing: 0.02em;
+    color: var(--ink);
+    background: transparent;
+    border: 1px solid var(--panel-line);
+    border-radius: 999px;
+    padding: 8px 16px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background .2s ease;
+  }
+  .btn:hover { background: rgba(140,110,230,0.12); }
+  .btn[aria-pressed="true"] { background: rgba(140,110,230,0.22); border-color: rgba(170,140,255,0.5); }
+  .btn.primary { background: #7B5CFF; color: #fff; border-color: transparent; }
+  .btn.primary:hover { background: #6A4BF0; }
+  button:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
+
+  body.presenting .hint, body.presenting .title p { opacity: 0; }
+  .title p, .hint { transition: opacity .8s ease; }
+  .hint {
+    position: fixed;
+    right: clamp(18px, 4vw, 44px);
+    top: calc(env(safe-area-inset-top, 0px) + clamp(22px, 4vw, 46px));
+    font-size: 13px; color: var(--ink-soft);
+    pointer-events: none;
+  }
+  @media (max-width: 640px) {
+    .hint { display: none; }
+    .dock { flex-wrap: wrap; justify-content: center; border-radius: 22px; padding: 12px; gap: 10px; width: calc(100vw - 24px); }
+    .sep { display: none; }
+    .swatches { width: 100%; justify-content: center; }
+  }
 </style>
 </head>
 <body>
-<div id="stage" aria-label="Interactive 3D model of the Somadome. Drag to orbit."></div>
-<img id="fallback" src="assets/dome-object-open.png" alt="Somadome dome">
+<div id="stage" aria-label="Interactive 3D model of the Somadome. Drag to orbit, scroll or pinch to zoom."></div>
+
+<div class="title">
+  <h1>Somadome</h1>
+  <p>Light, sound and stillness in one dome. Open the canopy, change the light, or run a short session.</p>
+</div>
+<div class="hint">Drag to orbit · scroll to zoom</div>
+
+<div class="dock" role="toolbar" aria-label="Dome controls">
+  <div class="swatches" role="group" aria-label="Light color">
+    <button class="swatch" style="--c:#8A4DFF" data-color="#8A4DFF" aria-label="Violet light" aria-pressed="true"></button>
+    <button class="swatch" style="--c:#3D6BFF" data-color="#3D6BFF" aria-label="Indigo light" aria-pressed="false"></button>
+    <button class="swatch" style="--c:#10C8E6" data-color="#10C8E6" aria-label="Teal light" aria-pressed="false"></button>
+    <button class="swatch" style="--c:#22D468" data-color="#22D468" aria-label="Green light" aria-pressed="false"></button>
+    <button class="swatch" style="--c:#FFA21F" data-color="#FFA21F" aria-label="Amber light" aria-pressed="false"></button>
+    <button class="swatch" style="--c:#FF4597" data-color="#FF4597" aria-label="Rose light" aria-pressed="false"></button>
+  </div>
+  <span class="sep" aria-hidden="true"></span>
+  <button class="btn" id="presentBtn" aria-pressed="false">Present</button>
+  <button class="btn" id="lidBtn">Close canopy</button>
+  <button class="btn primary" id="sessionBtn">Start session</button>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/build/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
@@ -22,21 +168,18 @@
 <script>
 (function () {
   const stage = document.getElementById('stage');
-  const params = new URLSearchParams(location.search);
-  const DARK = params.get('theme') !== 'light';
-  const START_COLOR = /^#[0-9a-f]{6}$/i.test(params.get('color') || '') ? params.get('color') : '#8A4DFF';
-  const coarse = window.matchMedia('(pointer: coarse)').matches;
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  function isDark() { return DARK; }
-  function showFallback() { stage.style.display = 'none'; document.getElementById('fallback').style.display = 'block'; }
+  const darkQuery = window.matchMedia('(prefers-color-scheme: dark)');
+  function isDark() {
+    const t = document.documentElement.getAttribute('data-theme');
+    if (t === 'dark') return true;
+    if (t === 'light') return false;
+    return darkQuery.matches;
+  }
 
   // ---------- renderer / scene ----------
-  let renderer;
-  try {
-    if (!window.THREE) throw new Error('three.js failed to load');
-    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-  } catch (e) { showFallback(); return; }
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, coarse ? 1.5 : 2));
+  const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
   renderer.outputEncoding = THREE.sRGBEncoding;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.05;
@@ -44,7 +187,6 @@
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.setClearColor(0x000000, 0);
   stage.appendChild(renderer.domElement);
-  renderer.domElement.addEventListener('webglcontextlost', e => { e.preventDefault(); showFallback(); });
 
   const scene = new THREE.Scene();
   const pmrem = new THREE.PMREMGenerator(renderer);
@@ -57,16 +199,21 @@
   controls.target.set(0.1, 1.3, 0);
   controls.enableDamping = true;
   controls.dampingFactor = 0.06;
-  controls.enableZoom = false;              // scrolling the page shouldn't zoom the model
-  controls.enablePan = false;
+  controls.minDistance = 3.2;
+  controls.maxDistance = 12;
   controls.maxPolarAngle = Math.PI * 0.495;
+  controls.enablePan = false;
   controls.autoRotate = true;
   controls.autoRotateSpeed = 0;             // eased toward presentSpeed in the loop
-  renderer.domElement.style.touchAction = 'pan-y';   // vertical swipes still scroll the page on phones
-  // turntable by default; a drag takes over, and the spin resumes after a few idle seconds
-  let presenting = true, presentSpeed = 0, idleTimer = 0;
-  controls.addEventListener('start', () => { presenting = false; clearTimeout(idleTimer); });
-  controls.addEventListener('end', () => { clearTimeout(idleTimer); idleTimer = setTimeout(() => { presenting = true; }, 5000); });
+  let presenting = false, presentSpeed = 0;
+  controls.addEventListener('start', () => { if (presenting) setPresenting(false); });
+  function setPresenting(on) {
+    presenting = on;
+    const b = document.getElementById('presentBtn');
+    b.setAttribute('aria-pressed', String(on));
+    b.textContent = on ? 'Stop presenting' : 'Present';
+    document.body.classList.toggle('presenting', on);
+  }
 
   // ---------- lights ----------
   const hemi = new THREE.HemisphereLight(0xf4efff, 0x5a4a8a, 0.55);
@@ -74,7 +221,7 @@
   const key = new THREE.DirectionalLight(0xffffff, 1.6);
   key.position.set(-3, 6, 4);
   key.castShadow = true;
-  key.shadow.mapSize.set(coarse ? 1024 : 2048, coarse ? 1024 : 2048);
+  key.shadow.mapSize.set(2048, 2048);
   key.shadow.camera.left = -3; key.shadow.camera.right = 3;
   key.shadow.camera.top = 3; key.shadow.camera.bottom = -3;
   key.shadow.radius = 6;
@@ -85,7 +232,7 @@
   scene.add(rim);
 
   // frequency light (the therapy colour)
-  const freq = { color: new THREE.Color(START_COLOR), target: new THREE.Color(START_COLOR) };
+  const freq = { color: new THREE.Color('#8A4DFF'), target: new THREE.Color('#8A4DFF') };
   const glowLight = new THREE.PointLight(0x8a4dff, 4, 3.2, 2);
   scene.add(glowLight);
   const spill = new THREE.PointLight(0x8a4dff, 1.6, 4.5, 2);
@@ -196,7 +343,9 @@
     [1.62, 1.64, 1.58, 0.80, 0.62, 0.34],
     [2.02, 1.98, 1.84, 0.78, 0.42, 0.36]
   ];
+  // cross-section: straight upper walls, then a rounded belly (faceted in ARC steps per side)
   // big flat panels like the real shell: rim -> one tall side panel -> crease -> broad flat underside
+  const ARC = 1;
   function profile(w, d, md, alt) {
     const crease = -d * (alt ? 0.62 : 0.5);             // staggered creases turn the side panels into big triangles
     const L = [[-w, 0], [-w * 1.04, crease], [-w * (alt ? 0.38 : 0.46), -d]];
@@ -434,7 +583,7 @@
 
   // fresnel aura around the canopy
   const auraMat = new THREE.ShaderMaterial({
-    uniforms: { uColor: { value: new THREE.Color(START_COLOR) }, uStrength: { value: 0.9 } },
+    uniforms: { uColor: { value: new THREE.Color('#8A4DFF') }, uStrength: { value: 0.9 } },
     vertexShader: `
       varying vec3 vN; varying vec3 vV;
       void main(){
@@ -603,7 +752,7 @@
 
   // volumetric light shaft pouring from the open canopy onto the cushions
   const shaftMat = new THREE.ShaderMaterial({
-    uniforms: { uColor: { value: new THREE.Color(START_COLOR) }, uOpacity: { value: 0 }, uTime: { value: 0 } },
+    uniforms: { uColor: { value: new THREE.Color('#8A4DFF') }, uOpacity: { value: 0 }, uTime: { value: 0 } },
     vertexShader: `
       varying vec2 vUv; varying vec3 vN; varying vec3 vV;
       void main(){
@@ -629,22 +778,94 @@
   shaft.position.y = -shaftLen / 2 - 0.05;
   domeBody.add(shaft);
 
+  // ripples of light that roll across the floor when the colour changes or the dome breathes
+  const rippleTex = (() => {
+    const cv = document.createElement('canvas'); cv.width = cv.height = 256;
+    const x = cv.getContext('2d');
+    const g = x.createRadialGradient(128, 128, 0, 128, 128, 128);
+    g.addColorStop(0, 'rgba(255,255,255,0)'); g.addColorStop(0.82, 'rgba(255,255,255,0)');
+    g.addColorStop(0.93, 'rgba(255,255,255,1)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+    x.fillStyle = g; x.fillRect(0, 0, 256, 256);
+    return new THREE.CanvasTexture(cv);
+  })();
+  const ripples = [];
+  for (let i = 0; i < 5; i++) {
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(1, 1),
+      new THREE.MeshBasicMaterial({ map: rippleTex, color: 0x8a4dff, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false }));
+    m.rotation.x = -Math.PI / 2; m.position.set(0.1, 0.006, 0); m.visible = false;
+    m.userData.age = 99; scene.add(m); ripples.push(m);
+  }
+  let rippleIdx = 0;
+  function spawnRipple(hex) {
+    if (reduceMotion) return;
+    const m = ripples[rippleIdx++ % ripples.length];
+    m.material.color.set(hex || freq.target);
+    m.userData.age = 0; m.visible = true;
+  }
+
   // ---------- state ----------
-  const OPEN = -1.0;
-  dome.rotation.z = OPEN;                   // canopy open, as on the start screen photo
+  const OPEN = -1.0, CLOSED = 0;
+  let lidTarget = OPEN;
+  dome.rotation.z = OPEN;
+
+  let session = false, sessionStart = 0, lastBreath = -1;
+  const palette = ['#8A4DFF', '#3D6BFF', '#10C8E6', '#22D468', '#FFA21F', '#FF4597'];
+
+  const lidBtn = document.getElementById('lidBtn');
+  const sessionBtn = document.getElementById('sessionBtn');
+  const swatches = Array.from(document.querySelectorAll('.swatch'));
+
+  document.getElementById('presentBtn').addEventListener('click', () => setPresenting(!presenting));
+  function setColor(hex) {
+    if (freq.target.getHexString() !== new THREE.Color(hex).getHexString()) spawnRipple(hex);
+    freq.target.set(hex);
+    swatches.forEach(s => s.setAttribute('aria-pressed', String(s.dataset.color.toLowerCase() === hex.toLowerCase())));
+  }
+  function setLid(open) {
+    lidTarget = open ? OPEN : CLOSED;
+    lidBtn.textContent = open ? 'Close canopy' : 'Open canopy';
+  }
+  swatches.forEach(s => s.addEventListener('click', () => {
+    if (session) stopSession();
+    setColor(s.dataset.color);
+  }));
+  lidBtn.addEventListener('click', () => setLid(lidTarget !== OPEN));
+  function stopSession() {
+    session = false;
+    sessionBtn.textContent = 'Start session';
+    setLid(true);
+  }
+  sessionBtn.addEventListener('click', () => {
+    if (session) { stopSession(); return; }
+    session = true;
+    sessionStart = performance.now();
+    sessionBtn.textContent = 'End session';
+    setLid(false);
+  });
 
   // ---------- theme ----------
-  hemi.intensity = isDark() ? 0.35 : 0.65;
-  key.intensity = isDark() ? 0.85 : 1.5;
-  shadowFloor.material.opacity = isDark() ? 0.32 : 0.16;
-  renderer.toneMappingExposure = isDark() ? 0.82 : 0.95;
+  function applyTheme() {
+    const dark = isDark();
+    hemi.intensity = dark ? 0.35 : 0.65;
+    key.intensity = dark ? 0.85 : 1.5;
+    shadowFloor.material.opacity = dark ? 0.32 : 0.16;
+    poolMat.opacity = dark ? 0.85 : 0.45;
+    auraMat.uniforms.uStrength.value = dark ? 1.0 : 0.45;
+    haloMat.opacity = dark ? 0.55 : 0.25;
+    moteMat.opacity = dark ? 0.7 : 0.35;
+    renderer.toneMappingExposure = dark ? 0.82 : 0.95;
+  }
+  applyTheme();
+  darkQuery.addEventListener ? darkQuery.addEventListener('change', applyTheme) : darkQuery.addListener(applyTheme);
+  new MutationObserver(applyTheme).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 
   // ---------- resize ----------
   function resize() {
-    const w = stage.clientWidth || 1, h = stage.clientHeight || 1;
+    const w = stage.clientWidth, h = stage.clientHeight;
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
-    camera.fov = w / h < 0.8 ? 46 : 32;     // pull back on tall/narrow boxes so the whole dome fits
+    // pull back on tall/narrow screens so the whole dome fits
+    camera.fov = w / h < 0.8 ? 46 : 32;
     camera.updateProjectionMatrix();
   }
   window.addEventListener('resize', resize);
@@ -657,7 +878,21 @@
   function tick() {
     const dt = Math.min(clock.getDelta(), 0.05);
     const t = clock.elapsedTime;
-    const breath = reduceMotion ? 1 : 0.92 + 0.08 * Math.sin(t * 0.8);
+
+    // lid easing
+    const k = reduceMotion ? 1 : 1 - Math.pow(0.0025, dt);
+    dome.rotation.z += (lidTarget - dome.rotation.z) * k;
+
+    // session: slow walk through the frequencies, breathing intensity
+    let breath = 1;
+    if (session) {
+      const st = (performance.now() - sessionStart) / 1000;
+      const idx = Math.floor(st / 6) % palette.length;
+      if (freq.target.getHexString() !== palette[idx].slice(1).toLowerCase()) setColor(palette[idx]);
+      breath = reduceMotion ? 1 : 0.75 + 0.25 * Math.sin(st * (Math.PI * 2 / 8));
+    } else if (!reduceMotion) {
+      breath = 0.92 + 0.08 * Math.sin(t * 0.8);
+    }
 
     freq.color.lerp(freq.target, 1 - Math.pow(0.02, dt));
     const col = freq.color;
@@ -677,21 +912,22 @@
     velvetPadMat.sheenColor.copy(col).lerp(new THREE.Color(1, 1, 1), 0.08);
     velvetMat.sheenColor.copy(velvetPadMat.sheenColor);
 
-    // canopy is held open
-    domeLight.intensity = 2.1 * breath;
+    const openness = THREE.MathUtils.clamp((dome.rotation.z - CLOSED) / (OPEN - CLOSED), 0, 1);
+    domeLight.intensity = (0.9 + 1.2 * openness) * breath;
     domeInnerMat.emissiveIntensity = 1.0 * breath;
-    domeOuterMat.emissiveIntensity = 0.62 * breath;
-    domeOuterMat.opacity = 0.84;
-    auraMat.uniforms.uStrength.value = (isDark() ? 1.0 : 0.45) * breath;
-    poolMat.opacity = Math.min(1, (isDark() ? 0.85 : 0.45) * breath);
-    spill.intensity = 2.6 * breath;
-    glowLight.intensity = 1.2 * breath;
+    const shut = 1 - openness;
+    domeOuterMat.emissiveIntensity = (0.62 + 0.38 * shut) * breath;   // closed: the whole canopy becomes the lamp
+    domeOuterMat.opacity = 0.84 + 0.14 * shut;
+    auraMat.uniforms.uStrength.value = (isDark() ? 1.0 : 0.45) * (1 + 1.4 * shut) * breath;
+    poolMat.opacity = Math.min(1, (isDark() ? 0.85 : 0.45) * (1 + 0.6 * shut) * breath);
+    spill.intensity = (2.6 + 2.4 * shut) * breath;
+    glowLight.intensity = (0.5 + 0.7 * openness) * breath;
 
     // keep lights anchored to the moving parts
     domeBody.getWorldPosition(tmp);
     halo.position.copy(tmp).add(new THREE.Vector3(-0.15, -0.15, 0));
-    bedGlowMat.opacity = (isDark() ? 0.28 : 0.16) * breath;
-    halo.material.opacity = (isDark() ? 0.6 : 0.3) * 0.75 * breath;
+    bedGlowMat.opacity = (isDark() ? 0.28 : 0.16) * (0.35 + 0.65 * openness) * breath;
+    halo.material.opacity = (isDark() ? 0.6 : 0.3) * (0.75 + 0.6 * (1 - openness)) * breath;
     glowLight.position.copy(W(new THREE.Vector3(0.9, 0.35, 0)));
     spill.position.copy(W(new THREE.Vector3(1.0, -0.9, 0)));
 
@@ -705,7 +941,7 @@
     }
     moteGeo.attributes.position.needsUpdate = true;
     moteMat.color.copy(c);
-    moteMat.opacity = isDark() ? 0.35 : 0.15;
+    moteMat.opacity = (isDark() ? 0.35 : 0.15) * openness;
 
     // presentation: ease into a slow turntable spin with a gentle camera drift
     presentSpeed += ((presenting && !reduceMotion ? 0.55 : 0) - presentSpeed) * (1 - Math.pow(0.15, dt));
@@ -721,23 +957,28 @@
 
     shaftMat.uniforms.uColor.value.copy(col);
     shaftMat.uniforms.uTime.value = t;
-    shaftMat.uniforms.uOpacity.value = (isDark() ? 0.55 : 0.3) * breath;
+    shaftMat.uniforms.uOpacity.value = Math.pow(openness, 2) * (isDark() ? 0.55 : 0.3) * breath;
+
+    // breathing ripple during a session (one per breath)
+    if (session && !reduceMotion) {
+      const ph = Math.floor(((performance.now() - sessionStart) / 1000 + 2) / 8);
+      if (ph !== lastBreath) { lastBreath = ph; spawnRipple(); }
+    }
+    ripples.forEach(m => {
+      if (!m.visible) return;
+      m.userData.age += dt;
+      const k = m.userData.age / 4.5;
+      if (k >= 1) { m.visible = false; return; }
+      const sc = 1.2 + k * 7.5;
+      m.scale.set(sc, sc * 0.92, 1);
+      m.material.opacity = Math.sin(Math.PI * Math.min(1, k * 1.4)) * (1 - k) * (isDark() ? 0.9 : 0.5);
+    });
 
     controls.update();
     renderer.render(scene, camera);
+    requestAnimationFrame(tick);
   }
-
-  // only render while on screen and the tab is visible (saves battery and memory on phones)
-  let visible = true, running = false;
-  function loop() {
-    if (!visible || document.hidden) { running = false; return; }
-    tick();
-    requestAnimationFrame(loop);
-  }
-  function wake() { if (!running && visible && !document.hidden) { running = true; clock.getDelta(); requestAnimationFrame(loop); } }
-  new IntersectionObserver(([e]) => { visible = e.isIntersecting; wake(); }).observe(stage);
-  document.addEventListener('visibilitychange', wake);
-  wake();
+  tick();
 })();
 </script>
 </body>
